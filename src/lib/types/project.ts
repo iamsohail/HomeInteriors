@@ -12,11 +12,22 @@ export interface Project {
   bhkType: string;
   address: string;
   rooms: string[];
+  expectedBudget?: number;
   budgetMin: number;
   budgetMax: number;
   budgetAllocations: BudgetAllocation[];
   memberUids: string[];
+  pendingInvites?: string[];
   ownerId: string;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface ProjectInvite {
+  id: string;
+  email: string;
+  role: "editor" | "viewer";
+  invitedBy: string;
+  status: "pending" | "accepted" | "declined";
+  createdAt: Date;
 }

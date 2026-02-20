@@ -11,16 +11,16 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { STATUS_COLORS } from "@/lib/constants/statuses";
-import { formatCurrency } from "@/lib/utils/currency";
 import { formatDateShort } from "@/lib/utils/date";
 import type { Expense } from "@/lib/types/expense";
 
 interface ColumnActions {
   onEdit: (expense: Expense) => void;
   onDelete: (expense: Expense) => void;
+  formatCurrency: (amount: number) => string;
 }
 
-export function getExpenseColumns({ onEdit, onDelete }: ColumnActions): ColumnDef<Expense>[] {
+export function getExpenseColumns({ onEdit, onDelete, formatCurrency }: ColumnActions): ColumnDef<Expense>[] {
   return [
     {
       accessorKey: "date",

@@ -12,12 +12,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useOrders } from "@/lib/hooks/use-orders";
-import { formatCurrency } from "@/lib/utils/currency";
+import { useCurrency } from "@/lib/hooks/use-currency";
 import { formatDate } from "@/lib/utils/date";
 import { STATUS_COLORS } from "@/lib/constants/statuses";
 
 export default function EMIsPage() {
   const { orders, loading } = useOrders();
+  const { formatCurrency } = useCurrency();
 
   const emiOrders = orders.filter((o) => o.isEMI);
   const totalMonthly = emiOrders.reduce((s, o) => s + (o.emiPerMonth || 0), 0);

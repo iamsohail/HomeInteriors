@@ -13,7 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { parseExpenseExcel, type ParseResult } from "@/lib/utils/excel-parser";
-import { formatCurrency } from "@/lib/utils/currency";
+import { useCurrency } from "@/lib/hooks/use-currency";
 
 interface ImportWizardProps {
   open: boolean;
@@ -24,6 +24,7 @@ interface ImportWizardProps {
 type Step = "upload" | "preview" | "importing" | "done";
 
 export function ImportWizard({ open, onOpenChange, onImport }: ImportWizardProps) {
+  const { formatCurrency } = useCurrency();
   const [step, setStep] = useState<Step>("upload");
   const [result, setResult] = useState<ParseResult | null>(null);
   const [error, setError] = useState<string | null>(null);

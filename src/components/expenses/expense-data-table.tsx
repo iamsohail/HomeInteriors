@@ -33,7 +33,7 @@ import { getExpenseColumns } from "./expense-columns";
 import { EXPENSE_CATEGORIES } from "@/lib/constants/categories";
 import { EXPENSE_STATUSES } from "@/lib/constants/statuses";
 import { useProject } from "@/lib/providers/project-provider";
-import { formatCurrency } from "@/lib/utils/currency";
+import { useCurrency } from "@/lib/hooks/use-currency";
 import type { Expense } from "@/lib/types/expense";
 
 interface ExpenseDataTableProps {
@@ -44,12 +44,13 @@ interface ExpenseDataTableProps {
 
 export function ExpenseDataTable({ data, onEdit, onDelete }: ExpenseDataTableProps) {
   const { project } = useProject();
+  const { formatCurrency } = useCurrency();
   const rooms = project?.rooms || [];
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [globalFilter, setGlobalFilter] = useState("");
 
-  const columns = getExpenseColumns({ onEdit, onDelete });
+  const columns = getExpenseColumns({ onEdit, onDelete, formatCurrency });
 
   const table = useReactTable({
     data,

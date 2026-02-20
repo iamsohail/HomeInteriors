@@ -10,7 +10,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatCurrency, formatCurrencyCompact } from "@/lib/utils/currency";
+import { useCurrency } from "@/lib/hooks/use-currency";
 import type { CategoryBudget } from "@/lib/hooks/use-budget";
 
 interface CategoryChartProps {
@@ -18,6 +18,7 @@ interface CategoryChartProps {
 }
 
 export function CategoryChart({ data }: CategoryChartProps) {
+  const { formatCurrency, formatCurrencyCompact } = useCurrency();
   // Only show categories with spending or allocation
   const chartData = data
     .filter((d) => d.spent > 0 || d.allocated > 0)
@@ -43,6 +44,7 @@ export function CategoryChart({ data }: CategoryChartProps) {
                 type="number"
                 tickFormatter={(v) => formatCurrencyCompact(v)}
                 fontSize={11}
+                tick={{ fill: "oklch(0.65 0.01 260)" }}
               />
               <YAxis
                 type="category"
@@ -50,18 +52,28 @@ export function CategoryChart({ data }: CategoryChartProps) {
                 width={85}
                 fontSize={11}
                 tickLine={false}
+                tick={{ fill: "oklch(0.75 0.01 260)" }}
               />
               <Tooltip
                 formatter={(value: number, name: string) => [
                   formatCurrency(value),
                   name === "spent" ? "Spent" : "Budget",
                 ]}
+                cursor={{ fill: "oklch(1 0 0 / 5%)" }}
                 contentStyle={{
                   borderRadius: "8px",
                   fontSize: "12px",
-                  border: "1px solid hsl(var(--border))",
-                  background: "hsl(var(--popover))",
-                  color: "hsl(var(--popover-foreground))",
+                  border: "1px solid oklch(1 0 0 / 10%)",
+                  background: "oklch(0.16 0.01 260)",
+                  color: "oklch(0.95 0.005 260)",
+                }}
+                labelStyle={{
+                  color: "oklch(0.95 0.005 260)",
+                  fontWeight: 600,
+                  marginBottom: "4px",
+                }}
+                itemStyle={{
+                  color: "oklch(0.75 0.01 260)",
                 }}
               />
               <Bar

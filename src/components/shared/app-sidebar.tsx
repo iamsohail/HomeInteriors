@@ -9,6 +9,7 @@ import {
   Calendar,
   DoorOpen,
   Lightbulb,
+  Palette,
   Wallet,
   CreditCard,
   Settings,
@@ -50,6 +51,7 @@ const NAV_ITEMS = [
   { label: "EMIs & Orders", href: "/emis", icon: CreditCard },
   { label: "Timeline", href: "/timeline", icon: Calendar },
   { label: "Rooms", href: "/rooms", icon: DoorOpen },
+  { label: "Mood Board", href: "/mood-board", icon: Palette },
   { label: "Recommendations", href: "/recommendations", icon: Lightbulb },
 ];
 

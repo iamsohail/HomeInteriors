@@ -4,4 +4,5 @@ export type { Task, TaskStatus, TaskPhase } from "./task";
 export type { Room, RoomType } from "./room";
 export type { Order, EMISchedule, OrderStatus } from "./emi";
 export type { Recommendation, RecommendationTier } from "./recommendation";
-export type { Project } from "./project";
+export type { Project, ProjectInvite } from "./project";
+export type { Pin } from "./pin";

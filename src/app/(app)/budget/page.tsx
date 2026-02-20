@@ -6,13 +6,14 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { useExpenses } from "@/lib/hooks/use-expenses";
 import { useBudget } from "@/lib/hooks/use-budget";
-import { formatCurrency } from "@/lib/utils/currency";
+import { useCurrency } from "@/lib/hooks/use-currency";
 import { STATUS_COLORS } from "@/lib/constants/statuses";
 
 export default function BudgetPage() {
   const { expenses, loading } = useExpenses();
   const { categoryBudgets, totalAllocated, totalSpent, totalRemaining, needsWants } =
     useBudget(expenses);
+  const { formatCurrency } = useCurrency();
 
   if (loading) {
     return (

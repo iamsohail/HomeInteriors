@@ -30,7 +30,8 @@ import {
 } from "@/components/ui/select";
 import { BHK_TYPES, CITIES, BUDGET_RANGES } from "@/lib/constants/apartment-types";
 import { useProject, type CreateProjectInput } from "@/lib/providers/project-provider";
-import { formatCurrency } from "@/lib/utils/currency";
+import { useCurrency } from "@/lib/hooks/use-currency";
+import { getCurrencySymbol } from "@/lib/utils/currency";
 import { toast } from "sonner";
 
 const formSchema = z.object({
@@ -38,6 +39,7 @@ const formSchema = z.object({
   city: z.string().min(1, "City is required"),
   bhkType: z.string().min(1, "Apartment type is required"),
   address: z.string(),
+  expectedBudget: z.number().min(0).optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -49,6 +51,7 @@ interface CreateProjectDialogProps {
 
 export function CreateProjectDialog({ open, onOpenChange }: CreateProjectDialogProps) {
   const { createProject } = useProject();
+  const { formatCurrency } = useCurrency();
   const [creating, setCreating] = useState(false);
 
   const form = useForm<FormValues>({
@@ -58,11 +61,14 @@ export function CreateProjectDialog({ open, onOpenChange }: CreateProjectDialogP
       city: "",
       bhkType: "",
       address: "",
+      expectedBudget: undefined,
     },
   });
 
   const selectedBHK = form.watch("bhkType");
+  const selectedCity = form.watch("city");
   const budgetRange = selectedBHK ? BUDGET_RANGES[selectedBHK] : null;
+  const symbol = getCurrencySymbol(selectedCity || "");
 
   const handleSubmit = async (values: FormValues) => {
     setCreating(true);
@@ -159,6 +165,30 @@ export function CreateProjectDialog({ open, onOpenChange }: CreateProjectDialogP
                 </span>
               </div>
             )}
+
+            <FormField
+              control={form.control}
+              name="expectedBudget"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Expected Budget (optional)</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">{symbol}</span>
+                      <Input
+                        type="number"
+                        placeholder="e.g. 1500000"
+                        className="pl-7"
+                        {...field}
+                        value={field.value ?? ""}
+                        onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
+                      />
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <FormField
               control={form.control}

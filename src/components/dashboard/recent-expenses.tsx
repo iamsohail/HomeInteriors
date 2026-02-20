@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { STATUS_COLORS } from "@/lib/constants/statuses";
-import { formatCurrency } from "@/lib/utils/currency";
+import { useCurrency } from "@/lib/hooks/use-currency";
 import { formatDateShort } from "@/lib/utils/date";
 import type { Expense } from "@/lib/types/expense";
 
@@ -12,6 +12,7 @@ interface RecentExpensesProps {
 }
 
 export function RecentExpenses({ expenses }: RecentExpensesProps) {
+  const { formatCurrency } = useCurrency();
   const recent = expenses.slice(0, 8);
 
   return (

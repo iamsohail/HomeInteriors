@@ -10,10 +10,16 @@ import {
 } from "react";
 import {
   collection,
+  collectionGroup,
   query,
   where,
   onSnapshot,
   addDoc,
+  updateDoc,
+  doc,
+  getDocs,
+  arrayUnion,
+  arrayRemove,
   serverTimestamp,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
@@ -36,6 +42,7 @@ export interface CreateProjectInput {
   city: string;
   bhkType: string;
   address?: string;
+  expectedBudget?: number;
   budgetMin?: number;
   budgetMax?: number;
   rooms?: string[];
@@ -56,7 +63,9 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const [projects, setProjects] = useState<Project[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [projectsLoaded, setProjectsLoaded] = useState(false);
+  const [invitesChecked, setInvitesChecked] = useState(false);
+  const loading = !projectsLoaded || !invitesChecked;
 
   // Load saved project ID from localStorage
   useEffect(() => {
@@ -68,7 +77,8 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!user || !db) {
       setProjects([]);
-      setLoading(false);
+      setProjectsLoaded(true);
+      setInvitesChecked(true);
       return;
     }
 
@@ -96,12 +106,49 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
           }
         }
 
-        setLoading(false);
+        setProjectsLoaded(true);
       },
-      () => setLoading(false)
+      () => setProjectsLoaded(true)
     );
 
     return unsub;
+  }, [user]);
+
+  // Auto-accept pending invites for this user's email
+  useEffect(() => {
+    if (!user?.email || !db) {
+      setInvitesChecked(true);
+      return;
+    }
+
+    const acceptInvites = async () => {
+      try {
+        const q = query(
+          collectionGroup(db!, "invites"),
+          where("email", "==", user.email!.toLowerCase()),
+          where("status", "==", "pending")
+        );
+        const snap = await getDocs(q);
+
+        for (const inviteDoc of snap.docs) {
+          const projectRef = inviteDoc.ref.parent.parent;
+          if (!projectRef) continue;
+
+          await updateDoc(projectRef, {
+            memberUids: arrayUnion(user.uid),
+            pendingInvites: arrayRemove(user.email!.toLowerCase()),
+          });
+
+          await updateDoc(inviteDoc.ref, { status: "accepted" });
+        }
+      } catch {
+        // Silently handle — will retry on next login
+      } finally {
+        setInvitesChecked(true);
+      }
+    };
+
+    acceptInvites();
   }, [user]);
 
   const selectProject = useCallback((id: string) => {
@@ -124,6 +171,7 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
         bhkType: bhk,
         address: data.address || "",
         rooms,
+        expectedBudget: data.expectedBudget || 0,
         budgetMin: data.budgetMin || defaults.min,
         budgetMax: data.budgetMax || defaults.max,
         budgetAllocations: Object.entries(DEFAULT_BUDGET_ALLOCATIONS).map(
