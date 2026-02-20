@@ -31,8 +31,8 @@ import {
 import { ChevronLeft, ChevronRight, Search } from "lucide-react";
 import { getExpenseColumns } from "./expense-columns";
 import { EXPENSE_CATEGORIES } from "@/lib/constants/categories";
-import { ROOMS } from "@/lib/constants/rooms";
 import { EXPENSE_STATUSES } from "@/lib/constants/statuses";
+import { useProject } from "@/lib/providers/project-provider";
 import { formatCurrency } from "@/lib/utils/currency";
 import type { Expense } from "@/lib/types/expense";
 
@@ -43,6 +43,8 @@ interface ExpenseDataTableProps {
 }
 
 export function ExpenseDataTable({ data, onEdit, onDelete }: ExpenseDataTableProps) {
+  const { project } = useProject();
+  const rooms = project?.rooms || [];
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [globalFilter, setGlobalFilter] = useState("");
@@ -110,7 +112,7 @@ export function ExpenseDataTable({ data, onEdit, onDelete }: ExpenseDataTablePro
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Rooms</SelectItem>
-            {ROOMS.map((r) => (
+            {rooms.map((r) => (
               <SelectItem key={r} value={r}>
                 {r}
               </SelectItem>

@@ -28,8 +28,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { EXPENSE_CATEGORIES } from "@/lib/constants/categories";
-import { ROOMS } from "@/lib/constants/rooms";
 import { EXPENSE_STATUSES, PAYMENT_MODES, PRIORITY_OPTIONS } from "@/lib/constants/statuses";
+import { useProject } from "@/lib/providers/project-provider";
 import type { Expense } from "@/lib/types/expense";
 
 const formSchema = z.object({
@@ -63,6 +63,8 @@ export function ExpenseFormDialog({
   onSubmit,
 }: ExpenseFormDialogProps) {
   const isEdit = !!expense;
+  const { project } = useProject();
+  const rooms = project?.rooms || [];
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -168,7 +170,7 @@ export function ExpenseFormDialog({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {ROOMS.map((r) => (
+                        {rooms.map((r) => (
                           <SelectItem key={r} value={r}>{r}</SelectItem>
                         ))}
                       </SelectContent>

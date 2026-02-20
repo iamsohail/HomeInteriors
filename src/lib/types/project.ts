@@ -1,5 +1,3 @@
-import type { ProjectMember } from "./user";
-
 export interface BudgetAllocation {
   category: string;
   allocated: number;
@@ -10,11 +8,14 @@ export interface Project {
   id: string;
   name: string;
   description: string;
+  city: string;
+  bhkType: string;
   address: string;
+  rooms: string[];
   budgetMin: number;
   budgetMax: number;
   budgetAllocations: BudgetAllocation[];
-  members: ProjectMember[];
+  memberUids: string[];
   ownerId: string;
   createdAt: Date;
   updatedAt: Date;

@@ -10,51 +10,68 @@ import {
   DoorOpen,
   Building,
   Utensils,
+  Wrench,
+  Flame,
+  Home,
   type LucideIcon,
 } from "lucide-react";
 import { Header } from "@/components/shared/header";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useExpenses } from "@/lib/hooks/use-expenses";
-import { ROOMS, ROOM_MEASUREMENTS, type RoomType } from "@/lib/constants/rooms";
+import { useProject } from "@/lib/providers/project-provider";
 import { formatCurrency } from "@/lib/utils/currency";
 
 const ROOM_ICON_MAP: Record<string, LucideIcon> = {
-  "Living Room": Sofa,
-  "Dining Area": Utensils,
-  "Master Bedroom": BedDouble,
-  "Bedroom 1": BedSingle,
-  "Bedroom 2": BedSingle,
-  "Kitchen & Utility": CookingPot,
-  "Master Toilet": Bath,
-  "Toilet 1": Bath,
-  "Toilet 2": Bath,
-  "Foyer": DoorOpen,
+  "Living": Sofa,
+  "Dining": Utensils,
+  "Master": BedDouble,
+  "Bedroom": BedSingle,
+  "Kitchen": CookingPot,
+  "Toilet": Bath,
+  "Bathroom": Bath,
   "Balcony": Sun,
-  "Whole House": Building,
+  "Foyer": DoorOpen,
+  "Utility": Wrench,
+  "Pooja": Flame,
+  "Garden": Sun,
+  "Terrace": Sun,
+  "Garage": Building,
+  "Family": Sofa,
 };
 
+function getIcon(roomName: string): LucideIcon {
+  for (const [key, icon] of Object.entries(ROOM_ICON_MAP)) {
+    if (roomName.toLowerCase().includes(key.toLowerCase())) return icon;
+  }
+  return Home;
+}
+
 export default function RoomsPage() {
+  const { project } = useProject();
   const { expenses } = useExpenses();
 
-  const roomStats = ROOMS.map((room) => {
-    // Match expenses by room name (handle "Kitchen" → "Kitchen & Utility" mapping)
+  const rooms = project?.rooms || [];
+
+  const roomStats = rooms.map((room) => {
     const roomExpenses = expenses.filter(
-      (e) => e.room === room || (room === "Kitchen & Utility" && e.room === "Kitchen")
+      (e) => e.room === room || e.room?.toLowerCase() === room.toLowerCase()
     );
     const totalSpent = roomExpenses.reduce((s, e) => s + e.total, 0);
     const itemCount = roomExpenses.length;
-    const measurements = ROOM_MEASUREMENTS[room];
-    return { room, totalSpent, itemCount, measurements };
+    return { room, totalSpent, itemCount };
   });
 
   return (
     <>
-      <Header title="Rooms" description="Vario Homes B1502 — 3BHK, 1133 sqft carpet" />
+      <Header
+        title="Rooms"
+        description={`${rooms.length} rooms in your ${project?.bhkType || "project"}`}
+      />
       <div className="flex-1 p-4 md:p-6">
         <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-          {roomStats.map(({ room, totalSpent, itemCount, measurements }) => {
-            const Icon = ROOM_ICON_MAP[room] || Building;
+          {roomStats.map(({ room, totalSpent, itemCount }) => {
+            const Icon = getIcon(room);
             return (
               <Card key={room} className="hover:border-primary/50 transition-colors">
                 <CardContent className="p-4 space-y-3">
@@ -64,12 +81,6 @@ export default function RoomsPage() {
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="font-medium text-sm">{room}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {measurements.dimensions}
-                        {measurements.areaSqft && room !== "Whole House"
-                          ? ` (~${measurements.areaSqft} sqft)`
-                          : ""}
-                      </p>
                     </div>
                     {itemCount > 0 && (
                       <Badge variant="secondary" className="text-xs shrink-0">
@@ -87,6 +98,11 @@ export default function RoomsPage() {
               </Card>
             );
           })}
+          {rooms.length === 0 && (
+            <div className="col-span-full rounded-lg border border-dashed p-12 text-center text-muted-foreground">
+              No rooms configured. Create a project to get started.
+            </div>
+          )}
         </div>
       </div>
     </>

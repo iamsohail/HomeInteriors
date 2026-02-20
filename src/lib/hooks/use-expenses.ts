@@ -14,21 +14,22 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
+import { useProject } from "@/lib/providers/project-provider";
 import type { Expense } from "@/lib/types/expense";
 
-const PROJECT_ID = "vario-b1502";
-
 export function useExpenses() {
+  const { projectId } = useProject();
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!db) {
+    if (!db || !projectId) {
+      setExpenses([]);
       setLoading(false);
       return;
     }
     const q = query(
-      collection(db, "projects", PROJECT_ID, "expenses"),
+      collection(db, "projects", projectId, "expenses"),
       orderBy("date", "desc")
     );
     const unsub = onSnapshot(
@@ -44,52 +45,59 @@ export function useExpenses() {
       () => setLoading(false)
     );
     return unsub;
-  }, []);
+  }, [projectId]);
 
   const addExpense = useCallback(
     async (data: Omit<Expense, "id" | "createdAt" | "updatedAt">) => {
-      if (!db) return;
-      await addDoc(collection(db, "projects", PROJECT_ID, "expenses"), {
+      if (!db || !projectId) return;
+      await addDoc(collection(db, "projects", projectId, "expenses"), {
         ...data,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
     },
-    []
+    [projectId]
   );
 
   const updateExpense = useCallback(
     async (id: string, data: Partial<Expense>) => {
-      if (!db) return;
-      await updateDoc(doc(db, "projects", PROJECT_ID, "expenses", id), {
+      if (!db || !projectId) return;
+      await updateDoc(doc(db, "projects", projectId, "expenses", id), {
         ...data,
         updatedAt: serverTimestamp(),
       });
     },
-    []
+    [projectId]
   );
 
-  const deleteExpense = useCallback(async (id: string) => {
-    if (!db) return;
-    await deleteDoc(doc(db, "projects", PROJECT_ID, "expenses", id));
-  }, []);
+  const deleteExpense = useCallback(
+    async (id: string) => {
+      if (!db || !projectId) return;
+      await deleteDoc(doc(db, "projects", projectId, "expenses", id));
+    },
+    [projectId]
+  );
 
   const batchImport = useCallback(
     async (items: Omit<Expense, "id" | "createdAt" | "updatedAt">[]) => {
-      if (!db) return;
-      const batch = writeBatch(db);
-      const colRef = collection(db, "projects", PROJECT_ID, "expenses");
-      for (const item of items) {
-        const docRef = doc(colRef);
-        batch.set(docRef, {
-          ...item,
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-        });
+      if (!db || !projectId) return;
+      // Firestore batch limit is 500
+      for (let i = 0; i < items.length; i += 499) {
+        const batch = writeBatch(db);
+        const chunk = items.slice(i, i + 499);
+        const colRef = collection(db, "projects", projectId, "expenses");
+        for (const item of chunk) {
+          const docRef = doc(colRef);
+          batch.set(docRef, {
+            ...item,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+          });
+        }
+        await batch.commit();
       }
-      await batch.commit();
     },
-    []
+    [projectId]
   );
 
   return { expenses, loading, addExpense, updateExpense, deleteExpense, batchImport };

@@ -9,9 +9,11 @@ import { RecentExpenses } from "@/components/dashboard/recent-expenses";
 import { useExpenses } from "@/lib/hooks/use-expenses";
 import { useOrders } from "@/lib/hooks/use-orders";
 import { useBudget } from "@/lib/hooks/use-budget";
+import { useProject } from "@/lib/providers/project-provider";
 import { formatCurrency, formatCurrencyCompact } from "@/lib/utils/currency";
 
 export default function DashboardPage() {
+  const { project } = useProject();
   const { expenses, loading: expLoading } = useExpenses();
   const { orders, loading: ordLoading } = useOrders();
   const { categoryBudgets, totalAllocated, totalSpent, totalRemaining } =
@@ -37,9 +39,11 @@ export default function DashboardPage() {
 
   return (
     <>
-      <Header title="Dashboard" description="Vario Homes B1502 — Interior Project" />
+      <Header
+        title="Dashboard"
+        description={project?.name || "Project overview"}
+      />
       <div className="flex-1 p-4 md:p-6 space-y-6">
-        {/* Stat Cards */}
         <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
           <StatCard
             title="Budget"
@@ -67,13 +71,11 @@ export default function DashboardPage() {
           />
         </div>
 
-        {/* Charts */}
         <div className="grid gap-6 lg:grid-cols-2">
           <BudgetDonut spent={totalSpent} remaining={totalRemaining} />
           <CategoryChart data={categoryBudgets} />
         </div>
 
-        {/* Recent Expenses */}
         <RecentExpenses expenses={expenses} />
       </div>
     </>
