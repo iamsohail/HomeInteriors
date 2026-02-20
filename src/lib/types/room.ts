@@ -1,18 +1,15 @@
 export type RoomType =
   | "Living Room"
+  | "Dining Area"
   | "Master Bedroom"
+  | "Bedroom 1"
   | "Bedroom 2"
-  | "Bedroom 3"
-  | "Kitchen"
-  | "Bathroom 1"
-  | "Bathroom 2"
-  | "Bathroom 3"
-  | "Balcony 1"
-  | "Balcony 2"
-  | "Entrance/Foyer"
-  | "Utility/Service"
-  | "Common Areas"
-  | "Pooja Room"
+  | "Kitchen & Utility"
+  | "Master Toilet"
+  | "Toilet 1"
+  | "Toilet 2"
+  | "Foyer"
+  | "Balcony"
   | "Whole House";
 
 export interface Room {
