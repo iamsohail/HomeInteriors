@@ -1,0 +1,21 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper: check if user is a project member
+    function isProjectMember(projectId) {
+      return request.auth != null &&
+        exists(/databases/$(database)/documents/projects/$(projectId)) &&
+        request.auth.uid in get(/databases/$(database)/documents/projects/$(projectId)).data.memberUids;
+    }
+
+    // For now, allow authenticated users full access (tighten after member system is built)
+    match /projects/{projectId} {
+      allow read, write: if request.auth != null;
+
+      match /{subcollection}/{docId} {
+        allow read, write: if request.auth != null;
+      }
+    }
+  }
+}
