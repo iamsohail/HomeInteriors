@@ -16,6 +16,8 @@ const CITY_CURRENCY: Record<string, { locale: string; currency: string }> = {
   noida: { locale: "en-IN", currency: "INR" },
   goa: { locale: "en-IN", currency: "INR" },
   chandigarh: { locale: "en-IN", currency: "INR" },
+  "delhi ncr": { locale: "en-IN", currency: "INR" },
+  other: { locale: "en-IN", currency: "INR" },
   // US
   "new york": { locale: "en-US", currency: "USD" },
   "los angeles": { locale: "en-US", currency: "USD" },
@@ -72,7 +74,8 @@ const COUNTRY_CURRENCY: Record<string, { locale: string; currency: string }> = {
   uae: { locale: "en-AE", currency: "AED" },
 };
 
-const DEFAULT = { locale: "en-US", currency: "USD" };
+// Default to INR since the app's primary audience is India
+const DEFAULT = { locale: "en-IN", currency: "INR" };
 
 function resolveCurrency(city: string): { locale: string; currency: string } {
   const lower = city.toLowerCase().trim();
@@ -151,6 +154,17 @@ export function formatCurrencyCompact(amount: number, city = ""): string {
 
 export function parseCurrencyInput(value: string): number {
   return Number(value.replace(/[^0-9.-]/g, "")) || 0;
+}
+
+// Format a number with locale-appropriate grouping (e.g., 15,00,000 for India, 1,500,000 for US)
+const numFmtCache = new Map<string, Intl.NumberFormat>();
+
+export function formatNumber(amount: number, city = ""): string {
+  if (!numFmtCache.has(city)) {
+    const { locale } = resolveCurrency(city);
+    numFmtCache.set(city, new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }));
+  }
+  return numFmtCache.get(city)!.format(amount);
 }
 
 export function getCurrencySymbol(city = ""): string {
