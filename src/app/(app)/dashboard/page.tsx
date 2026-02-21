@@ -1,16 +1,25 @@
 "use client";
 
 import { useMemo } from "react";
-import { Wallet, Receipt, ListChecks, Home } from "lucide-react";
 import { Header } from "@/components/shared/header";
-import { StatCard } from "@/components/dashboard/stat-card";
-import { ProjectHeader } from "@/components/dashboard/project-header";
-import { PhaseTimeline } from "@/components/dashboard/phase-timeline";
-import { BudgetDonut } from "@/components/dashboard/budget-donut";
-import { CategoryChart } from "@/components/dashboard/category-chart";
-import { RoomProgressGrid } from "@/components/dashboard/room-progress-grid";
-import { RecentActivity, type ActivityItem } from "@/components/dashboard/recent-activity";
-import { QuickActions } from "@/components/dashboard/quick-actions";
+import { HeroBudgetBanner } from "@/components/dashboard/hero-budget-banner";
+import { QuickActionsGrid } from "@/components/dashboard/quick-actions-grid";
+import {
+  SmartAlertsStrip,
+  type DashboardAlert,
+} from "@/components/dashboard/smart-alerts-strip";
+import { BudgetBreakdown } from "@/components/dashboard/budget-breakdown";
+import { PhaseProgress } from "@/components/dashboard/phase-progress";
+import { RoomSpendingCards } from "@/components/dashboard/room-spending-cards";
+import {
+  CashflowEmiWidget,
+  type EmiSummary,
+} from "@/components/dashboard/cashflow-emi-widget";
+import {
+  RecentActivityEnhanced,
+  type EnhancedActivityItem,
+} from "@/components/dashboard/recent-activity-enhanced";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useExpenses } from "@/lib/hooks/use-expenses";
 import { useOrders } from "@/lib/hooks/use-orders";
 import { useTasks } from "@/lib/hooks/use-tasks";
@@ -18,6 +27,7 @@ import { useBudget } from "@/lib/hooks/use-budget";
 import { useProject } from "@/lib/providers/project-provider";
 import { useCurrency } from "@/lib/hooks/use-currency";
 import { TASK_PHASES } from "@/lib/constants/task-phases";
+import { formatDate } from "@/lib/utils/date";
 import type { TaskStatus, TaskPhase } from "@/lib/types/task";
 
 export default function DashboardPage() {
@@ -25,19 +35,41 @@ export default function DashboardPage() {
   const { expenses, loading: expLoading } = useExpenses();
   const { orders, loading: ordLoading } = useOrders();
   const { tasks, loading: taskLoading } = useTasks();
-  const { categoryBudgets, totalSpent, totalRemaining } = useBudget(expenses);
+  const {
+    categoryBudgets,
+    totalSpent,
+    totalRemaining,
+    needsWants,
+  } = useBudget(expenses);
   const { formatCurrency, formatCurrencyCompact } = useCurrency();
 
   const loading = expLoading || ordLoading || taskLoading;
 
-  // Phase statuses derived from tasks
+  // ---------- Budget ----------
+  const expectedBudget = project?.expectedBudget || 0;
+  const budgetDisplay = expectedBudget > 0 ? expectedBudget : totalSpent + totalRemaining;
+  const budgetRemaining = budgetDisplay - totalSpent;
+
+  // ---------- Monthly Burn Rate ----------
+  const monthlyBurnRate = useMemo(() => {
+    if (expenses.length === 0 || totalSpent === 0) return 0;
+    const dates = expenses
+      .map((e) => new Date(e.date).getTime())
+      .filter((t) => !isNaN(t));
+    if (dates.length === 0) return 0;
+    const earliest = Math.min(...dates);
+    const monthsElapsed = Math.max(
+      (Date.now() - earliest) / (1000 * 60 * 60 * 24 * 30),
+      1
+    );
+    return totalSpent / monthsElapsed;
+  }, [expenses, totalSpent]);
+
+  // ---------- Phase Statuses ----------
   const phaseStatuses = useMemo(() => {
     const map: Record<string, TaskStatus> = {};
     for (const task of tasks) {
       const existing = map[task.phase];
-      // If any task in a phase is "In Progress", phase is in progress
-      // If all tasks are "Completed", phase is completed
-      // Otherwise use the "most active" status
       if (!existing) {
         map[task.phase] = task.status;
       } else if (task.status === "In Progress") {
@@ -49,21 +81,35 @@ export default function DashboardPage() {
     return map;
   }, [tasks]);
 
-  // Completed and current phase
   const completedPhases = useMemo(() => {
     return TASK_PHASES.filter((p) => phaseStatuses[p.name] === "Completed").length;
   }, [phaseStatuses]);
 
   const currentPhase = useMemo((): TaskPhase | null => {
-    // First phase that is "In Progress"
-    const inProgress = TASK_PHASES.find((p) => phaseStatuses[p.name] === "In Progress");
+    const inProgress = TASK_PHASES.find(
+      (p) => phaseStatuses[p.name] === "In Progress"
+    );
     if (inProgress) return inProgress.name;
-    // Otherwise first phase not completed
-    const notDone = TASK_PHASES.find((p) => phaseStatuses[p.name] !== "Completed");
+    const notDone = TASK_PHASES.find(
+      (p) => phaseStatuses[p.name] !== "Completed"
+    );
     return notDone?.name ?? null;
   }, [phaseStatuses]);
 
-  // Room progress from expenses
+  // ---------- Phase Costs ----------
+  const phaseCosts = useMemo(() => {
+    const costs: Record<string, { estimated: number; actual: number }> = {};
+    for (const task of tasks) {
+      if (!costs[task.phase]) {
+        costs[task.phase] = { estimated: 0, actual: 0 };
+      }
+      costs[task.phase].estimated += task.estimatedCost || 0;
+      costs[task.phase].actual += task.actualCost || 0;
+    }
+    return costs;
+  }, [tasks]);
+
+  // ---------- Room Progress ----------
   const roomProgress = useMemo(() => {
     const roomMap: Record<string, { itemCount: number; totalSpent: number }> = {};
     for (const exp of expenses) {
@@ -82,52 +128,171 @@ export default function DashboardPage() {
     }));
   }, [expenses, project?.rooms]);
 
-  // Recent activity: merge last expenses + orders, sort by date, take 6
-  const recentActivity = useMemo((): ActivityItem[] => {
-    const expenseItems: ActivityItem[] = expenses.slice(0, 6).map((e) => ({
+  // ---------- Alerts ----------
+  const alerts = useMemo((): DashboardAlert[] => {
+    const result: DashboardAlert[] = [];
+
+    // Over-budget categories
+    for (const cat of categoryBudgets) {
+      if (cat.allocated > 0 && cat.spent > cat.allocated) {
+        result.push({
+          id: `over-${cat.category}`,
+          type: "error",
+          message: `${cat.category} is over budget by ${formatCurrencyCompact(cat.spent - cat.allocated)}`,
+        });
+      }
+    }
+
+    // Pending expenses
+    const pendingCount = expenses.filter(
+      (e) => e.status === "Pending" || e.status === "Partially Paid"
+    ).length;
+    if (pendingCount > 0) {
+      result.push({
+        id: "pending-expenses",
+        type: "warning",
+        message: `${pendingCount} pending expense${pendingCount > 1 ? "s" : ""} need attention`,
+      });
+    }
+
+    // Upcoming EMI payments
+    const now = new Date();
+    let upcomingEmiCount = 0;
+    for (const order of orders) {
+      if (order.isEMI && order.emiSchedule) {
+        for (const emi of order.emiSchedule) {
+          if (!emi.paid && new Date(emi.dueDate) > now) {
+            upcomingEmiCount++;
+          }
+        }
+      }
+    }
+    if (upcomingEmiCount > 0) {
+      result.push({
+        id: "upcoming-emi",
+        type: "info",
+        message: `${upcomingEmiCount} upcoming EMI payment${upcomingEmiCount > 1 ? "s" : ""}`,
+      });
+    }
+
+    // Phases on hold
+    const onHoldPhases = TASK_PHASES.filter(
+      (p) => phaseStatuses[p.name] === "On Hold"
+    );
+    if (onHoldPhases.length > 0) {
+      result.push({
+        id: "blocked-phases",
+        type: "info",
+        message: `${onHoldPhases.length} phase${onHoldPhases.length > 1 ? "s" : ""} on hold`,
+      });
+    }
+
+    return result;
+  }, [categoryBudgets, expenses, orders, phaseStatuses, formatCurrencyCompact]);
+
+  // ---------- EMI Summary ----------
+  const emiSummary = useMemo((): EmiSummary => {
+    let totalOrdersValue = 0;
+    let totalPaid = 0;
+    let monthlyEmi = 0;
+    const upcomingPayments: EmiSummary["upcomingPayments"] = [];
+    const orderBars: EmiSummary["orderBars"] = [];
+    const now = new Date();
+
+    for (const order of orders) {
+      totalOrdersValue += order.totalAmount;
+      totalPaid += order.amountPaid;
+
+      orderBars.push({
+        vendor: order.vendor,
+        orderId: order.orderId,
+        totalAmount: order.totalAmount,
+        amountPaid: order.amountPaid,
+      });
+
+      if (order.isEMI && order.emiSchedule) {
+        monthlyEmi += order.emiPerMonth || 0;
+        for (const emi of order.emiSchedule) {
+          if (!emi.paid) {
+            const dueDate = new Date(emi.dueDate);
+            upcomingPayments.push({
+              vendor: order.vendor,
+              dueDate: formatDate(emi.dueDate),
+              amount: emi.amount,
+              isOverdue: dueDate < now,
+            });
+          }
+        }
+      }
+    }
+
+    // Sort upcoming: overdue first, then by date
+    upcomingPayments.sort((a, b) => {
+      if (a.isOverdue !== b.isOverdue) return a.isOverdue ? -1 : 1;
+      return a.dueDate.localeCompare(b.dueDate);
+    });
+
+    return {
+      totalOrdersValue,
+      totalPaid,
+      outstanding: totalOrdersValue - totalPaid,
+      monthlyEmi,
+      upcomingPayments,
+      orderBars,
+    };
+  }, [orders]);
+
+  // ---------- Recent Activity (enhanced) ----------
+  const recentActivity = useMemo((): EnhancedActivityItem[] => {
+    const expenseItems: EnhancedActivityItem[] = expenses.slice(0, 6).map((e) => ({
       id: e.id,
       type: "expense" as const,
       description: e.item,
       amount: e.total,
       date: e.date,
       status: e.status,
+      secondaryInfo: e.category,
     }));
-    const orderItems: ActivityItem[] = orders.slice(0, 6).map((o) => ({
+    const orderItems: EnhancedActivityItem[] = orders.slice(0, 6).map((o) => ({
       id: o.id,
       type: "order" as const,
       description: `${o.vendor} — ${o.items.slice(0, 2).join(", ")}`,
       amount: o.totalAmount,
       date: o.orderDate,
       status: o.status,
+      secondaryInfo: o.vendor,
     }));
     return [...expenseItems, ...orderItems]
       .sort((a, b) => (b.date || "").localeCompare(a.date || ""))
       .slice(0, 6);
   }, [expenses, orders]);
 
-  // Budget: use expectedBudget if set, otherwise totalAllocated
-  const expectedBudget = project?.expectedBudget || 0;
-  const budgetDisplay = expectedBudget > 0 ? expectedBudget : totalSpent + totalRemaining;
-  const budgetRemaining = budgetDisplay - totalSpent;
-  const budgetUsedPercent = budgetDisplay > 0 ? totalSpent / budgetDisplay : 0;
-
-  // Active rooms count
-  const activeRooms = roomProgress.filter((r) => r.itemCount > 0).length;
-
-  // Top 3 categories for the chart
-  const topCategories = useMemo(() => {
-    return [...categoryBudgets]
-      .filter((c) => c.spent > 0 || c.allocated > 0)
-      .sort((a, b) => b.spent - a.spent)
-      .slice(0, 3);
-  }, [categoryBudgets]);
-
+  // ---------- Loading skeleton ----------
   if (loading) {
     return (
       <>
         <Header title="Dashboard" />
-        <div className="flex flex-1 items-center justify-center text-muted-foreground">
-          Loading...
+        <div className="flex-1 space-y-6 p-4 md:p-6">
+          {/* Hero skeleton */}
+          <Skeleton className="h-[260px] w-full rounded-xl" />
+          {/* Quick actions skeleton */}
+          <div className="grid grid-cols-3 gap-3 md:grid-cols-6">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <Skeleton key={i} className="h-[80px] rounded-xl" />
+            ))}
+          </div>
+          {/* 2-col skeleton */}
+          <div className="grid gap-6 lg:grid-cols-2">
+            <Skeleton className="h-[400px] rounded-xl" />
+            <Skeleton className="h-[400px] rounded-xl" />
+          </div>
+          {/* 2-col skeleton */}
+          <div className="grid gap-6 lg:grid-cols-2">
+            <Skeleton className="h-[300px] rounded-xl" />
+            <Skeleton className="h-[300px] rounded-xl" />
+          </div>
+          {/* Recent activity skeleton */}
+          <Skeleton className="h-[250px] w-full rounded-xl" />
         </div>
       </>
     );
@@ -137,61 +302,51 @@ export default function DashboardPage() {
     <>
       <Header title="Dashboard" />
       <div className="flex-1 space-y-6 p-4 md:p-6">
-        {/* Project Header */}
+        {/* Hero Budget Banner */}
         {project && (
-          <ProjectHeader
-            project={project}
+          <HeroBudgetBanner
+            projectName={project.name}
+            bhkType={project.bhkType}
+            city={project.city}
+            totalBudget={budgetDisplay}
+            totalSpent={totalSpent}
+            remaining={budgetRemaining}
+            monthlyBurnRate={monthlyBurnRate}
             completedPhases={completedPhases}
-            currentPhase={currentPhase}
+            formatCurrency={formatCurrency}
+            formatCurrencyCompact={formatCurrencyCompact}
           />
         )}
 
-        {/* Stat Cards */}
-        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-          <StatCard
-            title="Budget"
-            value={formatCurrencyCompact(budgetDisplay)}
-            subtitle={expectedBudget > 0 ? "Expected" : "Allocated"}
-            icon={Wallet}
-            progress={budgetUsedPercent}
-          />
-          <StatCard
-            title="Spent"
-            value={formatCurrency(totalSpent)}
-            subtitle={`${Math.round(budgetUsedPercent * 100)}% used`}
-            icon={Receipt}
-          />
-          <StatCard
-            title="Phases Done"
-            value={`${completedPhases} / ${TASK_PHASES.length}`}
-            subtitle={currentPhase || "Not started"}
-            icon={ListChecks}
-          />
-          <StatCard
-            title="Rooms"
-            value={`${activeRooms} / ${roomProgress.length}`}
-            subtitle="active"
-            icon={Home}
-          />
-        </div>
-
-        {/* Phase Timeline + Budget Health */}
-        <div className="grid gap-6 lg:grid-cols-2">
-          <PhaseTimeline phaseStatuses={phaseStatuses} currentPhase={currentPhase} />
-          <div className="space-y-6">
-            <BudgetDonut spent={totalSpent} remaining={Math.max(budgetRemaining, 0)} />
-            {topCategories.length > 0 && <CategoryChart data={topCategories} />}
-          </div>
-        </div>
-
-        {/* Room Progress + Recent Activity */}
-        <div className="grid gap-6 lg:grid-cols-2">
-          <RoomProgressGrid rooms={roomProgress} />
-          <RecentActivity items={recentActivity} />
-        </div>
-
         {/* Quick Actions */}
-        <QuickActions />
+        <QuickActionsGrid />
+
+        {/* Smart Alerts */}
+        {alerts.length > 0 && <SmartAlertsStrip alerts={alerts} />}
+
+        {/* Budget Breakdown + Phase Progress */}
+        <div className="grid gap-6 lg:grid-cols-2">
+          <BudgetBreakdown
+            spent={totalSpent}
+            remaining={budgetRemaining}
+            categories={categoryBudgets}
+            needsWants={needsWants}
+          />
+          <PhaseProgress
+            phaseStatuses={phaseStatuses}
+            currentPhase={currentPhase}
+            phaseCosts={phaseCosts}
+          />
+        </div>
+
+        {/* Room Spending + Cash Flow / EMI */}
+        <div className="grid gap-6 lg:grid-cols-2">
+          <RoomSpendingCards rooms={roomProgress} />
+          <CashflowEmiWidget emiSummary={emiSummary} />
+        </div>
+
+        {/* Recent Activity */}
+        <RecentActivityEnhanced items={recentActivity} />
       </div>
     </>
   );
