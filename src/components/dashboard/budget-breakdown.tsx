@@ -157,7 +157,7 @@ export function BudgetBreakdown({
 
       {/* Category list */}
       {sortedCategories.length > 0 && (
-        <ScrollArea className="mt-4 max-h-[260px]">
+        <ScrollArea className="mt-4 max-h-[200px]">
           <div className="space-y-2.5">
             {sortedCategories.map((cat) => {
               const overBudget = cat.spent > cat.allocated && cat.allocated > 0;

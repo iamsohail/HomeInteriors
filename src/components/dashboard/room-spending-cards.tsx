@@ -16,8 +16,8 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { ROOM_ICONS } from "@/lib/constants/rooms";
 import type { RoomType } from "@/lib/constants/rooms";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useCurrency } from "@/lib/hooks/use-currency";
-import { cn } from "@/lib/utils";
 
 export interface RoomSpendingData {
   name: string;
@@ -78,43 +78,42 @@ export function RoomSpendingCards({ rooms }: RoomSpendingCardsProps) {
           <ArrowRight className="size-3" />
         </Link>
       </div>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-        {rooms.map((room) => {
-          const Icon = getRoomIcon(room.name);
-          const barPercent = maxSpent > 0 ? (room.totalSpent / maxSpent) * 100 : 0;
-          return (
-            <Link
-              key={room.name}
-              href="/rooms"
-              className={cn(
-                "group rounded-lg border border-border/40 bg-muted/20 p-3",
-                "transition-colors hover:border-border hover:bg-muted/40"
-              )}
-            >
-              <div className="flex items-center gap-2">
-                <Icon className="size-4 text-muted-foreground" />
-                <span className="truncate text-sm font-medium">{room.name}</span>
-              </div>
-              <div className="mt-2 space-y-1.5">
-                <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <span>
-                    {room.itemCount} {room.itemCount === 1 ? "item" : "items"}
-                  </span>
-                  <span className="font-semibold tabular-nums text-foreground">
-                    {formatCurrencyCompact(room.totalSpent)}
-                  </span>
+
+      <ScrollArea className="max-h-[280px]">
+        <div className="space-y-1.5">
+          {rooms.map((room) => {
+            const Icon = getRoomIcon(room.name);
+            const barPercent = maxSpent > 0 ? (room.totalSpent / maxSpent) * 100 : 0;
+            return (
+              <div
+                key={room.name}
+                className="flex items-center gap-3 rounded-lg px-2 py-1.5 transition-colors hover:bg-muted/30"
+              >
+                <Icon className="size-4 shrink-0 text-muted-foreground" />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="truncate text-sm font-medium">{room.name}</span>
+                    <span className="shrink-0 text-sm font-semibold tabular-nums">
+                      {formatCurrencyCompact(room.totalSpent)}
+                    </span>
+                  </div>
+                  <div className="mt-1 flex items-center gap-2">
+                    <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted/40">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-primary to-primary/60 transition-all"
+                        style={{ width: `${barPercent}%` }}
+                      />
+                    </div>
+                    <span className="shrink-0 text-2xs text-muted-foreground">
+                      {room.itemCount} {room.itemCount === 1 ? "item" : "items"}
+                    </span>
+                  </div>
                 </div>
-                <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted/40">
-                  <div
-                    className="h-full rounded-full bg-gradient-to-r from-primary to-primary/60 transition-all"
-                    style={{ width: `${barPercent}%` }}
-                  />
-                </div>
               </div>
-            </Link>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      </ScrollArea>
     </div>
   );
 }
