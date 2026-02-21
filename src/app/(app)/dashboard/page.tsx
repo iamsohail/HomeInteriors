@@ -304,14 +304,16 @@ export default function DashboardPage() {
               <Skeleton key={i} className="h-[100px] rounded-2xl" />
             ))}
           </div>
-          {/* Bento grid */}
-          <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
+          {/* Widget grids */}
+          <div className="grid gap-4 lg:grid-cols-2">
             <Skeleton className="h-[380px] rounded-2xl" />
             <Skeleton className="h-[380px] rounded-2xl" />
-            <Skeleton className="h-[380px] rounded-2xl lg:col-span-2 xl:col-span-1 xl:row-span-2" />
+          </div>
+          <div className="grid gap-4 lg:grid-cols-2">
             <Skeleton className="h-[280px] rounded-2xl" />
             <Skeleton className="h-[280px] rounded-2xl" />
           </div>
+          <Skeleton className="h-[250px] rounded-2xl" />
         </div>
       </>
     );
@@ -335,8 +337,8 @@ export default function DashboardPage() {
         {/* Smart Alerts */}
         {alerts.length > 0 && <SmartAlertsStrip alerts={alerts} />}
 
-        {/* Bento Grid */}
-        <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
+        {/* Budget + Phase */}
+        <div className="grid gap-4 lg:grid-cols-2">
           <BudgetBreakdown
             spent={totalSpent}
             remaining={budgetRemaining}
@@ -348,13 +350,16 @@ export default function DashboardPage() {
             currentPhase={currentPhase}
             phaseCosts={phaseCosts}
           />
-          {/* Recent Activity: spans 2 rows on xl, full-width on lg */}
-          <div className="lg:col-span-2 xl:col-span-1 xl:row-span-2">
-            <RecentActivityEnhanced items={recentActivity} />
-          </div>
+        </div>
+
+        {/* Room Spending + Cash Flow */}
+        <div className="grid gap-4 lg:grid-cols-2">
           <RoomSpendingCards rooms={roomProgress} />
           <CashflowEmiWidget emiSummary={emiSummary} />
         </div>
+
+        {/* Recent Activity */}
+        <RecentActivityEnhanced items={recentActivity} />
       </div>
     </>
   );

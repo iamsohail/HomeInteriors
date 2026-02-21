@@ -49,16 +49,18 @@ function getRoomIcon(roomName: string): LucideIcon {
 export function RoomSpendingCards({ rooms }: RoomSpendingCardsProps) {
   const { formatCurrencyCompact } = useCurrency();
 
-  const maxSpent = Math.max(...rooms.map((r) => r.totalSpent), 1);
+  // Only show rooms with actual spending
+  const activeRooms = rooms.filter((r) => r.totalSpent > 0 || r.itemCount > 0);
+  const maxSpent = Math.max(...activeRooms.map((r) => r.totalSpent), 1);
 
-  if (rooms.length === 0) {
+  if (activeRooms.length === 0) {
     return (
       <div className="rounded-2xl border border-border/40 bg-card p-4">
         <h3 className="mb-3 text-sm font-medium tracking-wide text-muted-foreground">
           Room Spending
         </h3>
         <p className="py-4 text-center text-sm text-muted-foreground">
-          No rooms configured yet.
+          No room spending data yet.
         </p>
       </div>
     );
@@ -81,7 +83,7 @@ export function RoomSpendingCards({ rooms }: RoomSpendingCardsProps) {
 
       <ScrollArea className="max-h-[280px]">
         <div className="space-y-1.5">
-          {rooms.map((room) => {
+          {activeRooms.map((room) => {
             const Icon = getRoomIcon(room.name);
             const barPercent = maxSpent > 0 ? (room.totalSpent / maxSpent) * 100 : 0;
             return (
