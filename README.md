@@ -1,36 +1,85 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# HomeBase
+
+Home interior project management web app for tracking expenses, budgets, timelines, and room progress during home renovation/interior work.
+
+## Tech Stack
+
+- **Framework:** Next.js 15 (App Router) + Turbopack
+- **UI:** Tailwind CSS v4 + shadcn/ui + Recharts
+- **Backend:** Firebase (Auth, Firestore, Storage)
+- **Deployment:** Vercel (auto-deploy on push to main)
+
+## Features
+
+- **Expense Tracker** — DataTable with filters, room/vendor/category breakdowns
+- **Budget Planner** — Set room-wise budgets, track actuals vs planned
+- **EMI Tracker** — Track loan EMIs with payment schedules
+- **Timeline** — 15-phase project timeline with status tracking
+- **Room Planner** — Room cards with photos, measurements, and checklists
+- **Room Measurements** — Detailed per-element measurements (walls, windows, doors, wardrobes) with dual-unit display (cm + ft/in), photo attachments, and tap-to-copy for vendor sharing
+- **Mood Board** — Visual inspiration collection
+- **Recommendations** — Bangalore vendor/store recommendations
 
 ## Getting Started
 
-First, run the development server:
-
 ```bash
+npm install
+cp .env.example .env.local  # Add Firebase config
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Project Structure
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+src/
+├── app/(app)/          # Authenticated app routes
+│   ├── dashboard/      # Main dashboard
+│   ├── expenses/       # Expense tracker
+│   ├── budget/         # Budget planner
+│   ├── emis/           # EMI tracker
+│   ├── rooms/          # Room planner
+│   ├── timeline/       # Project timeline
+│   ├── mood-board/     # Visual inspiration
+│   ├── recommendations/# Vendor recommendations
+│   └── settings/       # Project settings
+├── app/(auth)/         # Login/auth routes
+├── components/
+│   ├── rooms/          # Room-specific components
+│   ├── shared/         # Shared layout components
+│   └── ui/             # shadcn/ui primitives
+├── lib/
+│   ├── firebase/       # Firebase config, storage utils
+│   ├── hooks/          # Custom hooks (useRooms, useExpenses, etc.)
+│   ├── providers/      # Context providers
+│   ├── types/          # TypeScript types
+│   ├── utils/          # Utility functions
+│   └── constants/      # Room measurements, categories
+```
 
-## Learn More
+## Session Notes
 
-To learn more about Next.js, take a look at the following resources:
+### 2026-02-21 — Room Measurements Feature
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+**What was added:**
+- `MeasurementCategory` and `MeasurementEntry` types (`wall`, `window`, `door`, `wardrobe`, `counter`, `fixture`, `custom`)
+- `src/lib/utils/measurements.ts` — cm-to-ft/in conversion, `formatMeasurement()`, per-room category configs, auto-label suggestions
+- `src/components/rooms/measurement-form.tsx` — inline form with category selector (icon buttons), dimension inputs with live dual-unit preview, optional photo attachment via camera/gallery, notes field
+- `src/components/rooms/measurement-list.tsx` — grouped display by category with tap-to-copy dimension chips, edit/delete actions, photo thumbnails
+- `src/components/rooms/room-detail-dialog.tsx` — new tabbed dialog (Measurements + Photos) replacing `RoomPhotosDialog` as the room entry point
+- Updated `rooms/page.tsx` — measurement count badge (ruler icon) on room cards, integrated new dialog
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+**Key design decisions:**
+- Input in cm, stored as cm in Firestore, displayed as both cm and ft/in side-by-side (e.g., `305 cm · 10' 0"`)
+- Room-specific categories: Kitchen rooms get "Counters/Cabinets", Toilet/Bathroom rooms get "Fixtures"
+- Walls use letter labels (Wall A, Wall B), others use numbers (Window 1, Door 1)
+- Photo attachments reuse existing `resizeImage` + `uploadFile` pattern from room photos
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+**What to test:**
+- Tap room → dialog with Measurements + Photos tabs
+- Add wall/window/door measurements → dual-unit display
+- Tap dimension chip → copies to clipboard
+- Photo attachment on measurements
+- Kitchen room shows "Counter/Cabinet" category
+- Photos tab works as before (no regressions)
