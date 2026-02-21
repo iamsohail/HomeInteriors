@@ -52,8 +52,8 @@ export function RoomSpendingCards({ rooms }: RoomSpendingCardsProps) {
 
   if (rooms.length === 0) {
     return (
-      <div className="rounded-xl border border-border/50 bg-card/80 p-5 backdrop-blur-sm">
-        <h3 className="mb-4 text-sm font-medium tracking-wide text-muted-foreground">
+      <div className="rounded-xl border border-border/50 bg-card/80 p-4 backdrop-blur-sm">
+        <h3 className="mb-3 text-sm font-medium tracking-wide text-muted-foreground">
           Room Spending
         </h3>
         <p className="py-4 text-center text-sm text-muted-foreground">

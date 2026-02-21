@@ -267,32 +267,38 @@ export default function DashboardPage() {
       .slice(0, 6);
   }, [expenses, orders]);
 
+  // ---------- Header description ----------
+  const headerDescription = project
+    ? `${project.bhkType} · ${project.city || ""}`.replace(/ · $/, "")
+    : undefined;
+
   // ---------- Loading skeleton ----------
   if (loading) {
     return (
       <>
-        <Header title="Dashboard" />
-        <div className="flex-1 space-y-6 p-4 md:p-6">
-          {/* Hero skeleton */}
-          <Skeleton className="h-[260px] w-full rounded-xl" />
-          {/* Quick actions skeleton */}
-          <div className="grid grid-cols-3 gap-3 md:grid-cols-6">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <Skeleton key={i} className="h-[80px] rounded-xl" />
+        <Header title="Dashboard" description={headerDescription} />
+        <div className="flex-1 space-y-3 p-3 md:space-y-4 md:p-4">
+          {/* KPI row skeleton */}
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} className="h-[56px] rounded-xl" />
             ))}
           </div>
-          {/* 2-col skeleton */}
-          <div className="grid gap-6 lg:grid-cols-2">
-            <Skeleton className="h-[400px] rounded-xl" />
-            <Skeleton className="h-[400px] rounded-xl" />
+          {/* Quick actions + alerts skeleton */}
+          <div className="flex flex-col gap-3 md:flex-row md:gap-4">
+            <Skeleton className="h-[32px] flex-1 rounded-full" />
           </div>
-          {/* 2-col skeleton */}
-          <div className="grid gap-6 lg:grid-cols-2">
-            <Skeleton className="h-[300px] rounded-xl" />
-            <Skeleton className="h-[300px] rounded-xl" />
+          {/* Primary grid skeleton */}
+          <div className="grid gap-3 md:gap-4 lg:grid-cols-2 xl:grid-cols-3">
+            <Skeleton className="h-[380px] rounded-xl" />
+            <Skeleton className="h-[380px] rounded-xl" />
+            <Skeleton className="hidden h-[380px] rounded-xl xl:block" />
           </div>
-          {/* Recent activity skeleton */}
-          <Skeleton className="h-[250px] w-full rounded-xl" />
+          {/* Secondary grid skeleton */}
+          <div className="grid gap-3 md:gap-4 lg:grid-cols-2">
+            <Skeleton className="h-[280px] rounded-xl" />
+            <Skeleton className="h-[280px] rounded-xl" />
+          </div>
         </div>
       </>
     );
@@ -300,32 +306,31 @@ export default function DashboardPage() {
 
   return (
     <>
-      <Header title="Dashboard" />
-      <div className="flex-1 space-y-6 p-4 md:p-6">
-        {/* Hero Budget Banner */}
+      <Header title="Dashboard" description={headerDescription} />
+      <div className="flex-1 space-y-3 p-3 md:space-y-4 md:p-4">
+        {/* KPI Stats Row */}
         {project && (
           <HeroBudgetBanner
-            projectName={project.name}
-            bhkType={project.bhkType}
-            city={project.city}
             totalBudget={budgetDisplay}
             totalSpent={totalSpent}
             remaining={budgetRemaining}
             monthlyBurnRate={monthlyBurnRate}
-            completedPhases={completedPhases}
-            formatCurrency={formatCurrency}
             formatCurrencyCompact={formatCurrencyCompact}
           />
         )}
 
-        {/* Quick Actions */}
-        <QuickActionsGrid />
+        {/* Quick Actions + Smart Alerts */}
+        <div className="flex flex-col gap-3 md:flex-row md:items-start md:gap-4">
+          <QuickActionsGrid />
+          {alerts.length > 0 && (
+            <div className="shrink-0">
+              <SmartAlertsStrip alerts={alerts} />
+            </div>
+          )}
+        </div>
 
-        {/* Smart Alerts */}
-        {alerts.length > 0 && <SmartAlertsStrip alerts={alerts} />}
-
-        {/* Budget Breakdown + Phase Progress */}
-        <div className="grid gap-6 lg:grid-cols-2">
+        {/* Budget Breakdown + Phase Progress + Recent Activity (3-col on xl) */}
+        <div className="grid gap-3 md:gap-4 lg:grid-cols-2 xl:grid-cols-3">
           <BudgetBreakdown
             spent={totalSpent}
             remaining={budgetRemaining}
@@ -337,16 +342,21 @@ export default function DashboardPage() {
             currentPhase={currentPhase}
             phaseCosts={phaseCosts}
           />
+          <div className="hidden xl:block">
+            <RecentActivityEnhanced items={recentActivity} />
+          </div>
         </div>
 
         {/* Room Spending + Cash Flow / EMI */}
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="grid gap-3 md:gap-4 lg:grid-cols-2">
           <RoomSpendingCards rooms={roomProgress} />
           <CashflowEmiWidget emiSummary={emiSummary} />
         </div>
 
-        {/* Recent Activity */}
-        <RecentActivityEnhanced items={recentActivity} />
+        {/* Recent Activity — visible below xl */}
+        <div className="xl:hidden">
+          <RecentActivityEnhanced items={recentActivity} />
+        </div>
       </div>
     </>
   );

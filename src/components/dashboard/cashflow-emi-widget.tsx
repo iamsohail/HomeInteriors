@@ -44,8 +44,8 @@ export function CashflowEmiWidget({ emiSummary }: CashflowEmiWidgetProps) {
 
   if (isEmpty) {
     return (
-      <div className="rounded-xl border border-border/50 bg-card/80 p-5 backdrop-blur-sm">
-        <h3 className="mb-4 text-sm font-medium tracking-wide text-muted-foreground">
+      <div className="rounded-xl border border-border/50 bg-card/80 p-4 backdrop-blur-sm">
+        <h3 className="mb-3 text-sm font-medium tracking-wide text-muted-foreground">
           Cash Flow / EMI
         </h3>
         <div className="flex flex-col items-center justify-center py-6 text-center">
@@ -67,19 +67,19 @@ export function CashflowEmiWidget({ emiSummary }: CashflowEmiWidgetProps) {
       {/* Summary row */}
       <div className="grid grid-cols-3 gap-3">
         <div className="rounded-lg bg-muted/20 px-3 py-2 text-center">
-          <p className="text-[10px] text-muted-foreground">Orders Value</p>
+          <p className="text-2xs text-muted-foreground">Orders Value</p>
           <p className="text-sm font-semibold tabular-nums">
             {formatCurrencyCompact(totalOrdersValue)}
           </p>
         </div>
         <div className="rounded-lg bg-muted/20 px-3 py-2 text-center">
-          <p className="text-[10px] text-muted-foreground">Total Paid</p>
+          <p className="text-2xs text-muted-foreground">Total Paid</p>
           <p className="text-sm font-semibold tabular-nums text-green-500">
             {formatCurrencyCompact(totalPaid)}
           </p>
         </div>
         <div className="rounded-lg bg-muted/20 px-3 py-2 text-center">
-          <p className="text-[10px] text-muted-foreground">Outstanding</p>
+          <p className="text-2xs text-muted-foreground">Outstanding</p>
           <p className="text-sm font-semibold tabular-nums text-amber-500">
             {formatCurrencyCompact(outstanding)}
           </p>
@@ -116,7 +116,7 @@ export function CashflowEmiWidget({ emiSummary }: CashflowEmiWidgetProps) {
                 />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-xs font-medium">{payment.vendor}</p>
-                  <p className="text-[10px] text-muted-foreground">
+                  <p className="text-2xs text-muted-foreground">
                     {payment.dueDate}
                   </p>
                 </div>

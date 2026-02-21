@@ -57,8 +57,8 @@ export function BudgetBreakdown({
     .sort((a, b) => b.spent - a.spent);
 
   return (
-    <div className="rounded-xl border border-border/50 bg-card/80 p-5 backdrop-blur-sm">
-      <h3 className="mb-4 text-sm font-medium tracking-wide text-muted-foreground">
+    <div className="rounded-xl border border-border/50 bg-card/80 p-4 backdrop-blur-sm">
+      <h3 className="mb-3 text-sm font-medium tracking-wide text-muted-foreground">
         Budget Breakdown
       </h3>
 
@@ -127,7 +127,7 @@ export function BudgetBreakdown({
               />
             )}
           </div>
-          <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-muted-foreground">
+          <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 text-2xs text-muted-foreground">
             <span className="flex items-center gap-1">
               <span className="inline-block size-2 rounded-full bg-red-500/80" />
               Must-Have {Math.round(needsPct)}%

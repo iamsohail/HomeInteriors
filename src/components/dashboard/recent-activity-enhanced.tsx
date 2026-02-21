@@ -32,8 +32,8 @@ export function RecentActivityEnhanced({ items }: RecentActivityEnhancedProps) {
   const { formatCurrency } = useCurrency();
 
   return (
-    <div className="rounded-xl border border-border/50 bg-card/80 p-5 backdrop-blur-sm">
-      <div className="mb-4 flex items-center justify-between">
+    <div className="rounded-xl border border-border/50 bg-card/80 p-4 backdrop-blur-sm">
+      <div className="mb-3 flex items-center justify-between">
         <h3 className="text-sm font-medium tracking-wide text-muted-foreground">
           Recent Activity
         </h3>
@@ -69,7 +69,7 @@ export function RecentActivityEnhanced({ items }: RecentActivityEnhancedProps) {
                   <Badge
                     variant="ghost"
                     className={cn(
-                      "shrink-0 text-[10px] px-1.5 py-0",
+                      "shrink-0 text-2xs px-1.5 py-0",
                       STATUS_COLORS[item.status]
                     )}
                   >

@@ -22,7 +22,7 @@ const actions = [
 
 export function QuickActionsGrid() {
   return (
-    <div className="grid grid-cols-3 gap-3 md:grid-cols-6">
+    <div className="flex flex-wrap gap-2">
       {actions.map((action) => {
         const Icon = action.icon;
         return (
@@ -30,19 +30,12 @@ export function QuickActionsGrid() {
             key={action.label}
             href={action.href}
             className={cn(
-              "group flex flex-col items-center gap-2 rounded-xl border border-border/50 bg-card/80 p-4 backdrop-blur-sm",
+              "inline-flex items-center gap-1.5 rounded-full border border-border/50 bg-card/80 px-3 py-1.5 text-xs font-medium backdrop-blur-sm",
               "transition-all hover:border-border hover:bg-accent/50 hover:shadow-sm"
             )}
           >
-            <div
-              className={cn(
-                "flex size-10 items-center justify-center rounded-full bg-muted/50",
-                "transition-colors group-hover:bg-muted"
-              )}
-            >
-              <Icon className={cn("size-5", action.color)} />
-            </div>
-            <span className="text-center text-xs font-medium">{action.label}</span>
+            <Icon className={cn("size-3.5", action.color)} />
+            {action.label}
           </Link>
         );
       })}

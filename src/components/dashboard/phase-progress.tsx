@@ -34,12 +34,12 @@ export function PhaseProgress({
   const { formatCurrencyCompact } = useCurrency();
 
   return (
-    <div className="rounded-xl border border-border/50 bg-card/80 p-5 backdrop-blur-sm">
-      <h3 className="mb-4 text-sm font-medium tracking-wide text-muted-foreground">
+    <div className="rounded-xl border border-border/50 bg-card/80 p-4 backdrop-blur-sm">
+      <h3 className="mb-3 text-sm font-medium tracking-wide text-muted-foreground">
         Phase Progress
       </h3>
 
-      <ScrollArea className="max-h-[500px]">
+      <ScrollArea className="max-h-[400px]">
         <div className="relative">
           {TASK_PHASES.map((phase, index) => {
             const status = phaseStatuses[phase.name] || "Not Started";
@@ -106,7 +106,7 @@ export function PhaseProgress({
                     <Badge
                       variant="ghost"
                       className={cn(
-                        "text-[10px] px-1.5 py-0",
+                        "text-2xs px-1.5 py-0",
                         STATUS_COLORS[status]
                       )}
                     >
