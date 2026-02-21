@@ -17,6 +17,7 @@ export interface Project {
   budgetMax: number;
   budgetAllocations: BudgetAllocation[];
   memberUids: string[];
+  /** @deprecated Replaced by code-based invites via inviteCodes collection */
   pendingInvites?: string[];
   ownerId: string;
   createdAt: Date;
@@ -25,7 +26,8 @@ export interface Project {
 
 export interface ProjectInvite {
   id: string;
-  email: string;
+  code: string;
+  email?: string;
   role: "editor" | "viewer";
   invitedBy: string;
   status: "pending" | "accepted" | "declined";

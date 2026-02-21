@@ -17,5 +17,10 @@ service cloud.firestore {
         allow read, write: if request.auth != null;
       }
     }
+
+    // Invite codes — any authenticated user can read (to redeem) or write (to create/delete)
+    match /inviteCodes/{code} {
+      allow read, write: if request.auth != null;
+    }
   }
 }

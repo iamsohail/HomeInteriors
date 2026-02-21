@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Copy, Loader2, Send } from "lucide-react";
+import { Check, Copy, Loader2, Ticket } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -9,7 +9,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -23,46 +22,53 @@ import { toast } from "sonner";
 interface InviteDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onInvite: (email: string, role: "editor" | "viewer") => Promise<void>;
+  onInvite: (role: "editor" | "viewer") => Promise<string>;
 }
 
 export function InviteDialog({ open, onOpenChange, onInvite }: InviteDialogProps) {
-  const [email, setEmail] = useState("");
   const [role, setRole] = useState<"editor" | "viewer">("editor");
-  const [sending, setSending] = useState(false);
-  const [invited, setInvited] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [code, setCode] = useState<string | null>(null);
+  const [copiedCode, setCopiedCode] = useState(false);
+  const [copiedMsg, setCopiedMsg] = useState(false);
 
   const appUrl = typeof window !== "undefined" ? window.location.origin : "";
 
-  const handleSend = async () => {
-    if (!email.trim()) return;
-    setSending(true);
+  const handleGenerate = async () => {
+    setGenerating(true);
     try {
-      await onInvite(email.trim(), role);
-      toast.success(`Invite sent to ${email}`);
-      setInvited(true);
+      const generatedCode = await onInvite(role);
+      setCode(generatedCode);
+      toast.success("Invite code generated!");
     } catch {
-      toast.error("Failed to send invite");
+      toast.error("Failed to generate invite code");
     } finally {
-      setSending(false);
+      setGenerating(false);
     }
   };
 
-  const handleCopyLink = async () => {
-    const text = `You've been invited to collaborate on our home interiors project on HomeBase! Sign in with ${email} at:\n${appUrl}`;
+  const handleCopyCode = async () => {
+    if (!code) return;
+    await navigator.clipboard.writeText(code);
+    setCopiedCode(true);
+    toast.success("Code copied!");
+    setTimeout(() => setCopiedCode(false), 2000);
+  };
+
+  const handleCopyMessage = async () => {
+    const text = `You've been invited to collaborate on our home interiors project on HomeBase!\n\nYour invite code: ${code}\n\nSign in at ${appUrl} and enter the code to join.`;
     await navigator.clipboard.writeText(text);
-    setCopied(true);
-    toast.success("Copied! Share it via WhatsApp or message.");
-    setTimeout(() => setCopied(false), 2000);
+    setCopiedMsg(true);
+    toast.success("Message copied! Share it via WhatsApp or SMS.");
+    setTimeout(() => setCopiedMsg(false), 2000);
   };
 
   const handleClose = (isOpen: boolean) => {
     if (!isOpen) {
-      setEmail("");
       setRole("editor");
-      setInvited(false);
-      setCopied(false);
+      setCode(null);
+      setCopiedCode(false);
+      setCopiedMsg(false);
     }
     onOpenChange(isOpen);
   };
@@ -71,21 +77,11 @@ export function InviteDialog({ open, onOpenChange, onInvite }: InviteDialogProps
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{invited ? "Invite Sent" : "Invite Member"}</DialogTitle>
+          <DialogTitle>{code ? "Invite Code Ready" : "Invite Member"}</DialogTitle>
         </DialogHeader>
 
-        {!invited ? (
+        {!code ? (
           <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Email</Label>
-              <Input
-                type="email"
-                placeholder="family@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
-
             <div className="space-y-2">
               <Label>Role</Label>
               <Select value={role} onValueChange={(v) => setRole(v as "editor" | "viewer")}>
@@ -99,40 +95,58 @@ export function InviteDialog({ open, onOpenChange, onInvite }: InviteDialogProps
               </Select>
             </div>
 
-            <Button className="w-full" onClick={handleSend} disabled={!email.trim() || sending}>
-              {sending ? (
+            <Button className="w-full" onClick={handleGenerate} disabled={generating}>
+              {generating ? (
                 <Loader2 className="mr-2 size-4 animate-spin" />
               ) : (
-                <Send className="mr-2 size-4" />
+                <Ticket className="mr-2 size-4" />
               )}
-              Send Invite
+              Generate Invite Code
             </Button>
           </div>
         ) : (
           <div className="space-y-4">
-            <div className="rounded-lg bg-green-500/10 border border-green-500/20 p-4 text-center space-y-1">
+            <div className="rounded-lg bg-green-500/10 border border-green-500/20 p-5 text-center space-y-3">
               <Check className="size-8 text-green-400 mx-auto" />
-              <p className="text-sm font-medium">
-                Invite created for {email}
-              </p>
               <p className="text-xs text-muted-foreground">
-                They need to sign in with this exact email to join.
+                Share this code with your family member
               </p>
+              <button
+                onClick={handleCopyCode}
+                className="block mx-auto text-3xl font-mono font-bold tracking-[0.3em] text-foreground hover:text-primary transition-colors cursor-pointer select-all"
+              >
+                {code}
+              </button>
+              <Button variant="outline" size="sm" onClick={handleCopyCode}>
+                {copiedCode ? (
+                  <>
+                    <Check className="mr-1.5 size-3.5 text-green-400" />
+                    Copied!
+                  </>
+                ) : (
+                  <>
+                    <Copy className="mr-1.5 size-3.5" />
+                    Copy Code
+                  </>
+                )}
+              </Button>
             </div>
 
             <div className="space-y-2">
               <Label className="text-xs text-muted-foreground">
-                Share this message with them via WhatsApp / SMS:
+                Or share a message via WhatsApp / SMS:
               </Label>
               <div className="rounded-lg glass-card p-3 text-xs text-muted-foreground leading-relaxed">
-                You&apos;ve been invited to collaborate on our home interiors project on HomeBase! Sign in with <span className="font-medium text-foreground">{email}</span> at:
-                <br />
-                <span className="font-medium text-primary break-all">{appUrl}</span>
+                You&apos;ve been invited to collaborate on our home interiors project on HomeBase!
+                <br /><br />
+                Your invite code: <span className="font-mono font-bold text-foreground tracking-wider">{code}</span>
+                <br /><br />
+                Sign in at <span className="font-medium text-primary break-all">{appUrl}</span> and enter the code to join.
               </div>
             </div>
 
-            <Button variant="outline" className="w-full" onClick={handleCopyLink}>
-              {copied ? (
+            <Button variant="outline" className="w-full" onClick={handleCopyMessage}>
+              {copiedMsg ? (
                 <>
                   <Check className="mr-2 size-4 text-green-400" />
                   Copied!

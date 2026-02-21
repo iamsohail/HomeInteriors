@@ -15,10 +15,10 @@ import {
   onSnapshot,
   addDoc,
   updateDoc,
+  getDoc,
+  deleteDoc,
   doc,
-  getDocs,
   arrayUnion,
-  arrayRemove,
   serverTimestamp,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
@@ -34,6 +34,7 @@ interface ProjectContextType {
   loading: boolean;
   selectProject: (id: string) => void;
   createProject: (data: CreateProjectInput) => Promise<string>;
+  joinProjectByCode: (code: string) => Promise<void>;
 }
 
 export interface CreateProjectInput {
@@ -54,6 +55,7 @@ const ProjectContext = createContext<ProjectContextType>({
   loading: true,
   selectProject: () => {},
   createProject: async () => "",
+  joinProjectByCode: async () => {},
 });
 
 const STORAGE_KEY = "homebase_active_project";
@@ -63,8 +65,7 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
   const [projects, setProjects] = useState<Project[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [projectsLoaded, setProjectsLoaded] = useState(false);
-  const [invitesChecked, setInvitesChecked] = useState(false);
-  const loading = !projectsLoaded || !invitesChecked;
+  const loading = !projectsLoaded;
 
   // Load saved project ID from localStorage
   useEffect(() => {
@@ -77,7 +78,6 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     if (!user || !db) {
       setProjects([]);
       setProjectsLoaded(true);
-      setInvitesChecked(true);
       return;
     }
 
@@ -111,64 +111,6 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     );
 
     return unsub;
-  }, [user]);
-
-  // Auto-accept pending invites for this user's email
-  useEffect(() => {
-    if (!user?.email || !db) {
-      setInvitesChecked(true);
-      return;
-    }
-
-    const acceptInvites = async () => {
-      try {
-        const email = user.email!.toLowerCase();
-
-        // Query projects that have a pending invite for this email
-        const projectsQuery = query(
-          collection(db!, "projects"),
-          where("pendingInvites", "array-contains", email)
-        );
-        const projectsSnap = await getDocs(projectsQuery);
-
-        let acceptedProjectId: string | null = null;
-
-        for (const projectDoc of projectsSnap.docs) {
-          // Add user to project members
-          await updateDoc(projectDoc.ref, {
-            memberUids: arrayUnion(user.uid),
-            pendingInvites: arrayRemove(email),
-          });
-
-          if (!acceptedProjectId) {
-            acceptedProjectId = projectDoc.id;
-          }
-
-          // Mark matching invite docs as accepted
-          const invitesQuery = query(
-            collection(db!, "projects", projectDoc.id, "invites"),
-            where("email", "==", email),
-            where("status", "==", "pending")
-          );
-          const invitesSnap = await getDocs(invitesQuery);
-          for (const inviteDoc of invitesSnap.docs) {
-            await updateDoc(inviteDoc.ref, { status: "accepted" });
-          }
-        }
-
-        // Explicitly select the first accepted project so the user lands on its dashboard
-        if (acceptedProjectId) {
-          setActiveId(acceptedProjectId);
-          localStorage.setItem(STORAGE_KEY, acceptedProjectId);
-        }
-      } catch (err) {
-        console.error("Failed to accept invites:", err);
-      } finally {
-        setInvitesChecked(true);
-      }
-    };
-
-    acceptInvites();
   }, [user]);
 
   const selectProject = useCallback((id: string) => {
@@ -210,6 +152,44 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     [user]
   );
 
+  const joinProjectByCode = useCallback(
+    async (code: string): Promise<void> => {
+      if (!db || !user) throw new Error("Not authenticated");
+
+      const upperCode = code.toUpperCase().trim();
+
+      // Direct doc lookup — no query or index needed
+      const codeDoc = await getDoc(doc(db, "inviteCodes", upperCode));
+      if (!codeDoc.exists()) {
+        throw new Error("Invalid invite code");
+      }
+
+      const { projectId, inviteId } = codeDoc.data() as {
+        projectId: string;
+        inviteId: string;
+        role: string;
+      };
+
+      // Add user to project members
+      await updateDoc(doc(db, "projects", projectId), {
+        memberUids: arrayUnion(user.uid),
+      });
+
+      // Mark invite as accepted
+      await updateDoc(doc(db, "projects", projectId, "invites", inviteId), {
+        status: "accepted",
+      });
+
+      // Delete the code so it can't be reused
+      await deleteDoc(doc(db, "inviteCodes", upperCode));
+
+      // Select the joined project
+      setActiveId(projectId);
+      localStorage.setItem(STORAGE_KEY, projectId);
+    },
+    [user]
+  );
+
   const project = projects.find((p) => p.id === activeId) || null;
 
   return (
@@ -221,6 +201,7 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
         loading,
         selectProject,
         createProject,
+        joinProjectByCode,
       }}
     >
       {children}

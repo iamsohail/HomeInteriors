@@ -6,16 +6,16 @@ import {
   query,
   onSnapshot,
   addDoc,
-  updateDoc,
   deleteDoc,
   doc,
-  arrayUnion,
+  setDoc,
   arrayRemove,
   serverTimestamp,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
 import { useProject } from "@/lib/providers/project-provider";
 import { useAuth } from "@/lib/providers/auth-provider";
+import { generateInviteCode } from "@/lib/utils";
 import type { ProjectInvite } from "@/lib/types/project";
 
 export interface MemberInfo {
@@ -59,22 +59,30 @@ export function useMembers() {
   }, [projectId]);
 
   const inviteMember = useCallback(
-    async (email: string, role: "editor" | "viewer") => {
-      if (!db || !projectId || !user) return;
+    async (role: "editor" | "viewer"): Promise<string> => {
+      if (!db || !projectId || !user) throw new Error("Not ready");
 
-      // Add to invites subcollection
-      await addDoc(collection(db, "projects", projectId, "invites"), {
-        email: email.toLowerCase().trim(),
+      const code = generateInviteCode();
+
+      // Write invite to project subcollection
+      const inviteRef = await addDoc(collection(db, "projects", projectId, "invites"), {
+        code,
         role,
         invitedBy: user.uid,
         status: "pending",
         createdAt: serverTimestamp(),
       });
 
-      // Add email to project's pendingInvites array
-      await updateDoc(doc(db, "projects", projectId), {
-        pendingInvites: arrayUnion(email.toLowerCase().trim()),
+      // Write to top-level inviteCodes collection (doc ID = code for direct lookup)
+      await setDoc(doc(db, "inviteCodes", code), {
+        projectId,
+        inviteId: inviteRef.id,
+        role,
+        createdBy: user.uid,
+        createdAt: serverTimestamp(),
       });
+
+      return code;
     },
     [projectId, user]
   );
@@ -83,12 +91,13 @@ export function useMembers() {
     async (inviteId: string) => {
       if (!db || !projectId) return;
       const invite = invites.find((i) => i.id === inviteId);
+
+      // Delete invite doc
       await deleteDoc(doc(db, "projects", projectId, "invites", inviteId));
 
-      if (invite) {
-        await updateDoc(doc(db, "projects", projectId), {
-          pendingInvites: arrayRemove(invite.email),
-        });
+      // Delete the invite code lookup doc
+      if (invite?.code) {
+        await deleteDoc(doc(db, "inviteCodes", invite.code));
       }
     },
     [projectId, invites]
@@ -97,6 +106,7 @@ export function useMembers() {
   const removeMember = useCallback(
     async (uid: string) => {
       if (!db || !projectId) return;
+      const { updateDoc } = await import("firebase/firestore");
       await updateDoc(doc(db, "projects", projectId), {
         memberUids: arrayRemove(uid),
       });
@@ -107,6 +117,7 @@ export function useMembers() {
   const updateRole = useCallback(
     async (inviteId: string, role: "editor" | "viewer") => {
       if (!db || !projectId) return;
+      const { updateDoc } = await import("firebase/firestore");
       await updateDoc(doc(db, "projects", projectId, "invites", inviteId), {
         role,
       });

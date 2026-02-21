@@ -126,7 +126,7 @@ export function MemberList() {
               </AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">{invite.email}</p>
+              <p className="text-sm font-mono font-medium tracking-wider truncate">{invite.code}</p>
               <p className="text-xs text-muted-foreground">Pending invite</p>
             </div>
             <Badge variant="outline" className="shrink-0">

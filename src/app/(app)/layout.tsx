@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -23,7 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { BHK_TYPES, CITIES } from "@/lib/constants/apartment-types";
-import { getCurrencySymbol } from "@/lib/utils/currency";
+import { getCurrencySymbol, formatNumber, parseCurrencyInput } from "@/lib/utils/currency";
 import { toast } from "sonner";
 
 // Map Google Places city names to our CITIES list
@@ -60,27 +60,41 @@ const onboardingSchema = z.object({
 type OnboardingValues = z.infer<typeof onboardingSchema>;
 
 function OnboardingPage() {
-  const { createProject } = useProject();
+  const { createProject, joinProjectByCode } = useProject();
   const { user } = useAuth();
   const [creating, setCreating] = useState(false);
   const [selectedCity, setSelectedCity] = useState("");
-  const [showWaiting, setShowWaiting] = useState(false);
+  const [showCodeEntry, setShowCodeEntry] = useState(false);
+  const [inviteCode, setInviteCode] = useState("");
+  const [joining, setJoining] = useState(false);
+  const [codeError, setCodeError] = useState("");
+  const [budgetDisplay, setBudgetDisplay] = useState("");
+  const codeInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<OnboardingValues>({
     resolver: zodResolver(onboardingSchema),
     defaultValues: { name: "", city: "", bhkType: "", address: "", expectedBudget: undefined },
   });
 
+  // Re-format budget display when city changes
+  const updateCity = useCallback((city: string) => {
+    form.setValue("city", city);
+    setSelectedCity(city);
+    const currentBudget = form.getValues("expectedBudget");
+    if (currentBudget) {
+      setBudgetDisplay(formatNumber(currentBudget, city));
+    }
+  }, [form]);
+
   const handlePlaceSelect = useCallback(
     (place: PlaceResult) => {
       form.setValue("address", place.address);
       if (place.city) {
         const mapped = matchCity(place.city);
-        form.setValue("city", mapped);
-        setSelectedCity(mapped);
+        updateCity(mapped);
       }
     },
-    [form]
+    [form, updateCity]
   );
 
   const handleSubmit = async (values: OnboardingValues) => {
@@ -168,12 +182,26 @@ function OnboardingPage() {
                 Expected Budget <span className="text-white/40">(optional)</span>
               </label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-white/50">{getCurrencySymbol(selectedCity)}</span>
+                {selectedCity && (
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-white/50">{getCurrencySymbol(selectedCity)}</span>
+                )}
                 <Input
-                  type="number"
-                  placeholder="e.g. 15,00,000"
-                  {...form.register("expectedBudget", { valueAsNumber: true })}
-                  className="h-11 border-white/25 bg-white/15 pl-7 text-sm text-white placeholder:text-white/45 focus-visible:ring-white/40"
+                  type="text"
+                  inputMode="numeric"
+                  placeholder={selectedCity ? `e.g. ${formatNumber(1500000, selectedCity)}` : "e.g. 15,00,000"}
+                  value={budgetDisplay}
+                  onChange={(e) => {
+                    const raw = e.target.value.replace(/[^0-9]/g, "");
+                    if (!raw) {
+                      setBudgetDisplay("");
+                      form.setValue("expectedBudget", undefined);
+                      return;
+                    }
+                    const num = Number(raw);
+                    setBudgetDisplay(formatNumber(num, selectedCity));
+                    form.setValue("expectedBudget", num);
+                  }}
+                  className={`h-11 border-white/25 bg-white/15 text-sm text-white placeholder:text-white/45 focus-visible:ring-white/40 ${selectedCity ? "pl-7" : ""}`}
                 />
               </div>
             </div>
@@ -193,10 +221,7 @@ function OnboardingPage() {
               <label className="mb-1.5 block text-xs font-medium text-white/70">City</label>
               <Select
                 value={selectedCity}
-                onValueChange={(v) => {
-                  form.setValue("city", v);
-                  setSelectedCity(v);
-                }}
+                onValueChange={updateCity}
               >
                 <SelectTrigger className="h-11 border-white/25 bg-white/15 text-sm text-white data-[placeholder]:text-white/45 data-[state=open]:ring-white/40">
                   <SelectValue placeholder="Select city" />
@@ -229,31 +254,59 @@ function OnboardingPage() {
           <div className="mt-6 text-center">
             <button
               type="button"
-              onClick={() => setShowWaiting(true)}
+              onClick={() => {
+                setShowCodeEntry(true);
+                setTimeout(() => codeInputRef.current?.focus(), 100);
+              }}
               className="text-xs text-white/50 hover:text-white/80 underline underline-offset-2 transition-colors"
             >
-              Were you invited by a family member?
+              Have an invite code?
             </button>
           </div>
 
-          {showWaiting && (
-            <div className="mt-4 rounded-lg border border-white/15 bg-white/5 p-4 text-center space-y-2">
-              <p className="text-sm text-white/80">
-                Signed in as <span className="font-medium text-white">{user?.email}</span>
+          {showCodeEntry && (
+            <div className="mt-4 rounded-lg border border-white/15 bg-white/5 p-4 space-y-3">
+              <p className="text-xs text-white/50 text-center">
+                Enter the 6-character code from your family member
               </p>
-              <p className="text-xs text-white/50 leading-relaxed">
-                Ask the project owner to invite this email from
-                <span className="font-medium text-white/70"> Settings &rarr; Members &rarr; Invite</span>.
-                Once invited, refresh this page and you&apos;ll be added automatically.
-              </p>
+              <Input
+                ref={codeInputRef}
+                type="text"
+                maxLength={6}
+                placeholder="ABC123"
+                value={inviteCode}
+                onChange={(e) => {
+                  setInviteCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""));
+                  setCodeError("");
+                }}
+                className="h-12 border-white/25 bg-white/15 text-center text-lg font-mono font-bold tracking-[0.3em] text-white placeholder:text-white/30 focus-visible:ring-white/40 uppercase"
+              />
+              {codeError && (
+                <p className="text-xs text-red-400 text-center">{codeError}</p>
+              )}
               <Button
                 type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => window.location.reload()}
-                className="mt-2 border-white/20 bg-white/10 text-white text-xs hover:bg-white/20"
+                disabled={inviteCode.length !== 6 || joining}
+                onClick={async () => {
+                  setJoining(true);
+                  setCodeError("");
+                  try {
+                    await joinProjectByCode(inviteCode);
+                    toast.success("Joined project successfully!");
+                  } catch (err) {
+                    setCodeError(err instanceof Error ? err.message : "Invalid invite code");
+                  } finally {
+                    setJoining(false);
+                  }
+                }}
+                className="w-full h-10 text-sm font-semibold text-neutral-900"
+                style={{ background: "linear-gradient(135deg, #ffffff 0%, #e8e8e8 100%)", boxShadow: "0 4px 14px rgba(255,255,255,0.15)" }}
               >
-                Refresh
+                {joining ? (
+                  <div className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                ) : (
+                  "Join Project"
+                )}
               </Button>
             </div>
           )}
