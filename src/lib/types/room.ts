@@ -24,6 +24,7 @@ export interface Room {
   };
   checklist: ChecklistItem[];
   photos: RoomPhoto[];
+  detailedMeasurements?: MeasurementEntry[];
   notes: string;
   createdAt: Date;
   updatedAt: Date;
@@ -41,4 +42,26 @@ export interface RoomPhoto {
   caption: string;
   type: "inspiration" | "progress" | "completed";
   uploadedAt: Date;
+}
+
+export type MeasurementCategory =
+  | "wall"
+  | "window"
+  | "door"
+  | "wardrobe"
+  | "counter"
+  | "fixture"
+  | "custom";
+
+export interface MeasurementEntry {
+  id: string;
+  category: MeasurementCategory;
+  label: string;
+  width?: number;
+  height?: number;
+  depth?: number;
+  sillHeight?: number;
+  notes?: string;
+  photoUrl?: string;
+  createdAt: Date;
 }

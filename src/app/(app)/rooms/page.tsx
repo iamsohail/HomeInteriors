@@ -15,6 +15,7 @@ import {
   Flame,
   Home,
   Camera,
+  Ruler,
   type LucideIcon,
 } from "lucide-react";
 import { Header } from "@/components/shared/header";
@@ -24,8 +25,8 @@ import { useExpenses } from "@/lib/hooks/use-expenses";
 import { useRooms } from "@/lib/hooks/use-rooms";
 import { useProject } from "@/lib/providers/project-provider";
 import { useCurrency } from "@/lib/hooks/use-currency";
-import { RoomPhotosDialog } from "@/components/rooms/room-photos-dialog";
-import type { RoomPhoto } from "@/lib/types/room";
+import { RoomDetailDialog } from "@/components/rooms/room-detail-dialog";
+import type { Room } from "@/lib/types/room";
 
 const ROOM_ICON_MAP: Record<string, LucideIcon> = {
   "Living": Sofa,
@@ -69,24 +70,25 @@ export default function RoomsPage() {
     const itemCount = roomExpenses.length;
     const roomDoc = roomDocs.find((r) => r.name === room);
     const photoCount = roomDoc?.photos?.length || 0;
-    return { room, totalSpent, itemCount, photoCount, roomDoc };
+    const measurementCount = roomDoc?.detailedMeasurements?.length || 0;
+    return { room, totalSpent, itemCount, photoCount, measurementCount, roomDoc };
   });
 
   const selectedStat = roomStats.find((r) => r.room === selectedRoom);
-  const selectedPhotos = selectedStat?.roomDoc?.photos || [];
 
-  const handlePhotosChange = async (photos: RoomPhoto[]) => {
+  const handleUpdateRoom = async (data: Partial<Room>) => {
     if (!selectedRoom || !projectId) return;
     const roomDoc = roomDocs.find((r) => r.name === selectedRoom);
     if (roomDoc) {
-      await updateRoom(roomDoc.id, { photos });
+      await updateRoom(roomDoc.id, data);
     } else {
       await addRoom({
         name: selectedRoom as any,
         description: "",
         checklist: [],
-        photos,
+        photos: [],
         notes: "",
+        ...data,
       });
     }
   };
@@ -99,7 +101,7 @@ export default function RoomsPage() {
       />
       <div className="flex-1 p-4 md:p-6 pb-24 md:pb-6">
         <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-          {roomStats.map(({ room, totalSpent, itemCount, photoCount }) => {
+          {roomStats.map(({ room, totalSpent, itemCount, photoCount, measurementCount }) => {
             const Icon = getIcon(room);
             return (
               <Card
@@ -116,6 +118,12 @@ export default function RoomsPage() {
                       <p className="font-medium text-sm">{room}</p>
                     </div>
                     <div className="flex items-center gap-1.5 shrink-0">
+                      {measurementCount > 0 && (
+                        <Badge variant="outline" className="text-xs gap-1">
+                          <Ruler className="size-3" />
+                          {measurementCount}
+                        </Badge>
+                      )}
                       {photoCount > 0 && (
                         <Badge variant="outline" className="text-xs gap-1">
                           <Camera className="size-3" />
@@ -148,14 +156,14 @@ export default function RoomsPage() {
       </div>
 
       {selectedRoom && (
-        <RoomPhotosDialog
+        <RoomDetailDialog
           open={!!selectedRoom}
           onOpenChange={(open) => {
             if (!open) setSelectedRoom(null);
           }}
           roomName={selectedRoom}
-          photos={selectedPhotos}
-          onPhotosChange={handlePhotosChange}
+          roomDoc={selectedStat?.roomDoc}
+          onUpdateRoom={handleUpdateRoom}
         />
       )}
     </>
