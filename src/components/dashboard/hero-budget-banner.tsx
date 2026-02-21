@@ -31,7 +31,7 @@ export function HeroBudgetBanner({
       value: formatCurrencyCompact(totalBudget),
       subtitle: "Expected budget",
       icon: Wallet,
-      iconBg: "bg-emerald-500/15",
+      iconBg: "bg-emerald-500/20",
       iconColor: "text-emerald-500",
     },
     {
@@ -40,7 +40,7 @@ export function HeroBudgetBanner({
       pill: `${Math.round(usedPercent)}% used`,
       pillColor: spentPillColor,
       icon: Receipt,
-      iconBg: "bg-amber-500/15",
+      iconBg: "bg-amber-500/20",
       iconColor: "text-amber-500",
     },
     {
@@ -48,7 +48,7 @@ export function HeroBudgetBanner({
       value: formatCurrencyCompact(remaining),
       subtitle: "Available to spend",
       icon: TrendingDown,
-      iconBg: "bg-blue-500/15",
+      iconBg: "bg-blue-500/20",
       iconColor: "text-blue-500",
     },
     {
@@ -56,7 +56,7 @@ export function HeroBudgetBanner({
       value: formatCurrencyCompact(monthlyBurnRate),
       subtitle: "Average per month",
       icon: Flame,
-      iconBg: "bg-rose-500/15",
+      iconBg: "bg-rose-500/20",
       iconColor: "text-rose-500",
     },
   ];
@@ -75,7 +75,7 @@ export function HeroBudgetBanner({
                 <p className="text-xs font-medium text-muted-foreground">
                   {stat.label}
                 </p>
-                <p className="mt-2 text-2xl font-bold tabular-nums tracking-tight">
+                <p className="mt-2 text-3xl font-bold tabular-nums tracking-tight">
                   {stat.value}
                 </p>
                 {"subtitle" in stat && stat.subtitle && (
@@ -92,9 +92,9 @@ export function HeroBudgetBanner({
                 )}
               </div>
               <div
-                className={`flex size-11 shrink-0 items-center justify-center rounded-full ${stat.iconBg}`}
+                className={`flex size-12 shrink-0 items-center justify-center rounded-full ${stat.iconBg}`}
               >
-                <Icon className={`size-5 ${stat.iconColor}`} />
+                <Icon className={`size-5.5 ${stat.iconColor}`} />
               </div>
             </div>
           </div>

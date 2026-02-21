@@ -11,6 +11,7 @@ import {
   DoorOpen,
   Sun,
   Building,
+  ArrowRight,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { ROOM_ICONS } from "@/lib/constants/rooms";
@@ -64,10 +65,19 @@ export function RoomSpendingCards({ rooms }: RoomSpendingCardsProps) {
   }
 
   return (
-    <div className="rounded-xl border border-border/50 bg-card/80 p-5 backdrop-blur-sm">
-      <h3 className="mb-4 text-sm font-medium tracking-wide text-muted-foreground">
-        Room Spending
-      </h3>
+    <div className="rounded-2xl border border-border/40 bg-card p-4">
+      <div className="mb-3 flex items-center justify-between">
+        <h3 className="text-sm font-medium tracking-wide text-muted-foreground">
+          Room Spending
+        </h3>
+        <Link
+          href="/rooms"
+          className="inline-flex items-center gap-1 text-xs font-medium text-primary transition-colors hover:text-primary/80"
+        >
+          View all
+          <ArrowRight className="size-3" />
+        </Link>
+      </div>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {rooms.map((room) => {
           const Icon = getRoomIcon(room.name);

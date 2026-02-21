@@ -1,6 +1,7 @@
 "use client";
 
-import { Check, Loader2, Pause, Circle } from "lucide-react";
+import Link from "next/link";
+import { Check, Loader2, Pause, Circle, ArrowRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { STATUS_COLORS } from "@/lib/constants/statuses";
@@ -35,11 +36,20 @@ export function PhaseProgress({
 
   return (
     <div className="rounded-2xl border border-border/40 bg-card p-4">
-      <h3 className="mb-3 text-sm font-medium tracking-wide text-muted-foreground">
-        Phase Progress
-      </h3>
+      <div className="mb-3 flex items-center justify-between">
+        <h3 className="text-sm font-medium tracking-wide text-muted-foreground">
+          Phase Progress
+        </h3>
+        <Link
+          href="/timeline"
+          className="inline-flex items-center gap-1 text-xs font-medium text-primary transition-colors hover:text-primary/80"
+        >
+          View all
+          <ArrowRight className="size-3" />
+        </Link>
+      </div>
 
-      <ScrollArea className="max-h-[400px]">
+      <ScrollArea className="max-h-[340px]">
         <div className="relative">
           {TASK_PHASES.map((phase, index) => {
             const status = phaseStatuses[phase.name] || "Not Started";
@@ -60,7 +70,7 @@ export function PhaseProgress({
               <div
                 key={phase.name}
                 className={cn(
-                  "relative flex gap-4 pb-6",
+                  "relative flex gap-3 pb-4",
                   isCompleted && !isCurrent && "opacity-60"
                 )}
               >

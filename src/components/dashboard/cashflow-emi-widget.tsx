@@ -59,8 +59,8 @@ export function CashflowEmiWidget({ emiSummary }: CashflowEmiWidgetProps) {
   }
 
   return (
-    <div className="rounded-xl border border-border/50 bg-card/80 p-5 backdrop-blur-sm">
-      <h3 className="mb-4 text-sm font-medium tracking-wide text-muted-foreground">
+    <div className="rounded-2xl border border-border/40 bg-card p-4">
+      <h3 className="mb-3 text-sm font-medium tracking-wide text-muted-foreground">
         Cash Flow / EMI
       </h3>
 

@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useCurrency } from "@/lib/hooks/use-currency";
@@ -58,21 +60,30 @@ export function BudgetBreakdown({
 
   return (
     <div className="rounded-2xl border border-border/40 bg-card p-4">
-      <h3 className="mb-3 text-sm font-medium tracking-wide text-muted-foreground">
-        Budget Breakdown
-      </h3>
+      <div className="mb-3 flex items-center justify-between">
+        <h3 className="text-sm font-medium tracking-wide text-muted-foreground">
+          Budget Breakdown
+        </h3>
+        <Link
+          href="/budget"
+          className="inline-flex items-center gap-1 text-xs font-medium text-primary transition-colors hover:text-primary/80"
+        >
+          View details
+          <ArrowRight className="size-3" />
+        </Link>
+      </div>
 
       {/* Donut chart */}
       <div className="flex items-center justify-center">
-        <div className="relative size-[220px]">
+        <div className="relative size-[170px]">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
                 data={donutData}
                 cx="50%"
                 cy="50%"
-                innerRadius={65}
-                outerRadius={95}
+                innerRadius={50}
+                outerRadius={75}
                 paddingAngle={2}
                 dataKey="value"
                 strokeWidth={0}

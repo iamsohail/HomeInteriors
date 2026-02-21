@@ -304,16 +304,13 @@ export default function DashboardPage() {
               <Skeleton key={i} className="h-[100px] rounded-2xl" />
             ))}
           </div>
-          {/* Primary grid */}
+          {/* Bento grid */}
           <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
-            <Skeleton className="h-[400px] rounded-2xl" />
-            <Skeleton className="h-[400px] rounded-2xl" />
-            <Skeleton className="hidden h-[400px] rounded-2xl xl:block" />
-          </div>
-          {/* Secondary grid */}
-          <div className="grid gap-4 lg:grid-cols-2">
-            <Skeleton className="h-[300px] rounded-2xl" />
-            <Skeleton className="h-[300px] rounded-2xl" />
+            <Skeleton className="h-[380px] rounded-2xl" />
+            <Skeleton className="h-[380px] rounded-2xl" />
+            <Skeleton className="h-[380px] rounded-2xl lg:col-span-2 xl:col-span-1 xl:row-span-2" />
+            <Skeleton className="h-[280px] rounded-2xl" />
+            <Skeleton className="h-[280px] rounded-2xl" />
           </div>
         </div>
       </>
@@ -338,7 +335,7 @@ export default function DashboardPage() {
         {/* Smart Alerts */}
         {alerts.length > 0 && <SmartAlertsStrip alerts={alerts} />}
 
-        {/* Primary Grid: Budget + Phase + Activity (3-col on xl) */}
+        {/* Bento Grid */}
         <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
           <BudgetBreakdown
             spent={totalSpent}
@@ -351,20 +348,12 @@ export default function DashboardPage() {
             currentPhase={currentPhase}
             phaseCosts={phaseCosts}
           />
-          <div className="hidden xl:block">
+          {/* Recent Activity: spans 2 rows on xl, full-width on lg */}
+          <div className="lg:col-span-2 xl:col-span-1 xl:row-span-2">
             <RecentActivityEnhanced items={recentActivity} />
           </div>
-        </div>
-
-        {/* Secondary Grid: Room + Cash Flow */}
-        <div className="grid gap-4 lg:grid-cols-2">
           <RoomSpendingCards rooms={roomProgress} />
           <CashflowEmiWidget emiSummary={emiSummary} />
-        </div>
-
-        {/* Recent Activity — visible below xl */}
-        <div className="xl:hidden">
-          <RecentActivityEnhanced items={recentActivity} />
         </div>
       </div>
     </>

@@ -32,7 +32,7 @@ export function RecentActivityEnhanced({ items }: RecentActivityEnhancedProps) {
   const { formatCurrency } = useCurrency();
 
   return (
-    <div className="rounded-2xl border border-border/40 bg-card p-4">
+    <div className="flex h-full flex-col rounded-2xl border border-border/40 bg-card p-4">
       <div className="mb-3 flex items-center justify-between">
         <h3 className="text-sm font-medium tracking-wide text-muted-foreground">
           Recent Activity
@@ -50,7 +50,7 @@ export function RecentActivityEnhanced({ items }: RecentActivityEnhancedProps) {
           No activity yet. Start adding expenses or orders.
         </p>
       ) : (
-        <div className="space-y-3">
+        <div className="flex-1 space-y-3">
           {items.map((item) => (
             <div
               key={`${item.type}-${item.id}`}
