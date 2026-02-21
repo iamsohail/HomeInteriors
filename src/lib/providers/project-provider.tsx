@@ -10,7 +10,6 @@ import {
 } from "react";
 import {
   collection,
-  collectionGroup,
   query,
   where,
   onSnapshot,
@@ -123,26 +122,47 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
 
     const acceptInvites = async () => {
       try {
-        const q = query(
-          collectionGroup(db!, "invites"),
-          where("email", "==", user.email!.toLowerCase()),
-          where("status", "==", "pending")
+        const email = user.email!.toLowerCase();
+
+        // Query projects that have a pending invite for this email
+        const projectsQuery = query(
+          collection(db!, "projects"),
+          where("pendingInvites", "array-contains", email)
         );
-        const snap = await getDocs(q);
+        const projectsSnap = await getDocs(projectsQuery);
 
-        for (const inviteDoc of snap.docs) {
-          const projectRef = inviteDoc.ref.parent.parent;
-          if (!projectRef) continue;
+        let acceptedProjectId: string | null = null;
 
-          await updateDoc(projectRef, {
+        for (const projectDoc of projectsSnap.docs) {
+          // Add user to project members
+          await updateDoc(projectDoc.ref, {
             memberUids: arrayUnion(user.uid),
-            pendingInvites: arrayRemove(user.email!.toLowerCase()),
+            pendingInvites: arrayRemove(email),
           });
 
-          await updateDoc(inviteDoc.ref, { status: "accepted" });
+          if (!acceptedProjectId) {
+            acceptedProjectId = projectDoc.id;
+          }
+
+          // Mark matching invite docs as accepted
+          const invitesQuery = query(
+            collection(db!, "projects", projectDoc.id, "invites"),
+            where("email", "==", email),
+            where("status", "==", "pending")
+          );
+          const invitesSnap = await getDocs(invitesQuery);
+          for (const inviteDoc of invitesSnap.docs) {
+            await updateDoc(inviteDoc.ref, { status: "accepted" });
+          }
         }
-      } catch {
-        // Silently handle — will retry on next login
+
+        // Explicitly select the first accepted project so the user lands on its dashboard
+        if (acceptedProjectId) {
+          setActiveId(acceptedProjectId);
+          localStorage.setItem(STORAGE_KEY, acceptedProjectId);
+        }
+      } catch (err) {
+        console.error("Failed to accept invites:", err);
       } finally {
         setInvitesChecked(true);
       }
