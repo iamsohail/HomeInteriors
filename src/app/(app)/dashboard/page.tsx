@@ -276,14 +276,14 @@ export default function DashboardPage() {
   const headerActions = (
     <div className="flex items-center gap-2">
       <Link
-        href="/expenses/new"
+        href="/expenses"
         className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90"
       >
         <Plus className="size-3.5" />
         Add Expense
       </Link>
       <Link
-        href="/orders/new"
+        href="/emis"
         className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium transition-colors hover:bg-accent"
       >
         <Package className="size-3.5" />

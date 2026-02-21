@@ -85,9 +85,9 @@
 .dark {
   --background: oklch(0.11 0.01 260);
   --foreground: oklch(0.95 0.005 260);
-  --card: oklch(0.16 0.01 260);
+  --card: oklch(0.20 0.01 260);
   --card-foreground: oklch(0.95 0.005 260);
-  --popover: oklch(0.16 0.01 260);
+  --popover: oklch(0.20 0.01 260);
   --popover-foreground: oklch(0.95 0.005 260);
   --primary: oklch(0.7 0.15 250);
   --primary-foreground: oklch(0.98 0 0);
@@ -98,7 +98,7 @@
   --accent: oklch(0.22 0.02 260);
   --accent-foreground: oklch(0.95 0.005 260);
   --destructive: oklch(0.65 0.2 25);
-  --border: oklch(1 0 0 / 10%);
+  --border: oklch(1 0 0 / 14%);
   --input: oklch(1 0 0 / 12%);
   --ring: oklch(0.7 0.15 250);
   --chart-1: oklch(0.7 0.15 250);
@@ -144,6 +144,7 @@
 }
 
 @layer utilities {
+  .text-2xs { font-size: 0.6875rem; /* 11px */ line-height: 1rem; }
   .glass-card {
     background: oklch(1 0 0 / 5%);
     backdrop-filter: blur(12px);
