@@ -32,7 +32,7 @@ export function RecentActivityEnhanced({ items }: RecentActivityEnhancedProps) {
   const { formatCurrency } = useCurrency();
 
   return (
-    <div className="rounded-xl border border-border/50 bg-card/80 p-4 backdrop-blur-sm">
+    <div className="rounded-2xl border border-border/40 bg-card p-4">
       <div className="mb-3 flex items-center justify-between">
         <h3 className="text-sm font-medium tracking-wide text-muted-foreground">
           Recent Activity

@@ -1,9 +1,10 @@
 "use client";
 
 import { useMemo } from "react";
+import Link from "next/link";
+import { Plus, Package } from "lucide-react";
 import { Header } from "@/components/shared/header";
 import { HeroBudgetBanner } from "@/components/dashboard/hero-budget-banner";
-import { QuickActionsGrid } from "@/components/dashboard/quick-actions-grid";
 import {
   SmartAlertsStrip,
   type DashboardAlert,
@@ -267,37 +268,52 @@ export default function DashboardPage() {
       .slice(0, 6);
   }, [expenses, orders]);
 
-  // ---------- Header description ----------
+  // ---------- Header ----------
   const headerDescription = project
-    ? `${project.bhkType} · ${project.city || ""}`.replace(/ · $/, "")
+    ? [project.bhkType, project.city].filter(Boolean).join(" \u00b7 ")
     : undefined;
+
+  const headerActions = (
+    <div className="flex items-center gap-2">
+      <Link
+        href="/expenses/new"
+        className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+      >
+        <Plus className="size-3.5" />
+        Add Expense
+      </Link>
+      <Link
+        href="/orders/new"
+        className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium transition-colors hover:bg-accent"
+      >
+        <Package className="size-3.5" />
+        Add Order
+      </Link>
+    </div>
+  );
 
   // ---------- Loading skeleton ----------
   if (loading) {
     return (
       <>
-        <Header title="Dashboard" description={headerDescription} />
-        <div className="flex-1 space-y-3 p-3 md:space-y-4 md:p-4">
-          {/* KPI row skeleton */}
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        <Header title="Dashboard" description={headerDescription} actions={headerActions} />
+        <div className="flex-1 space-y-4 p-4 md:p-6">
+          {/* KPI row */}
+          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
             {Array.from({ length: 4 }).map((_, i) => (
-              <Skeleton key={i} className="h-[56px] rounded-xl" />
+              <Skeleton key={i} className="h-[100px] rounded-2xl" />
             ))}
           </div>
-          {/* Quick actions + alerts skeleton */}
-          <div className="flex flex-col gap-3 md:flex-row md:gap-4">
-            <Skeleton className="h-[32px] flex-1 rounded-full" />
+          {/* Primary grid */}
+          <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
+            <Skeleton className="h-[400px] rounded-2xl" />
+            <Skeleton className="h-[400px] rounded-2xl" />
+            <Skeleton className="hidden h-[400px] rounded-2xl xl:block" />
           </div>
-          {/* Primary grid skeleton */}
-          <div className="grid gap-3 md:gap-4 lg:grid-cols-2 xl:grid-cols-3">
-            <Skeleton className="h-[380px] rounded-xl" />
-            <Skeleton className="h-[380px] rounded-xl" />
-            <Skeleton className="hidden h-[380px] rounded-xl xl:block" />
-          </div>
-          {/* Secondary grid skeleton */}
-          <div className="grid gap-3 md:gap-4 lg:grid-cols-2">
-            <Skeleton className="h-[280px] rounded-xl" />
-            <Skeleton className="h-[280px] rounded-xl" />
+          {/* Secondary grid */}
+          <div className="grid gap-4 lg:grid-cols-2">
+            <Skeleton className="h-[300px] rounded-2xl" />
+            <Skeleton className="h-[300px] rounded-2xl" />
           </div>
         </div>
       </>
@@ -306,8 +322,8 @@ export default function DashboardPage() {
 
   return (
     <>
-      <Header title="Dashboard" description={headerDescription} />
-      <div className="flex-1 space-y-3 p-3 md:space-y-4 md:p-4">
+      <Header title="Dashboard" description={headerDescription} actions={headerActions} />
+      <div className="flex-1 space-y-4 p-4 md:p-6">
         {/* KPI Stats Row */}
         {project && (
           <HeroBudgetBanner
@@ -319,18 +335,11 @@ export default function DashboardPage() {
           />
         )}
 
-        {/* Quick Actions + Smart Alerts */}
-        <div className="flex flex-col gap-3 md:flex-row md:items-start md:gap-4">
-          <QuickActionsGrid />
-          {alerts.length > 0 && (
-            <div className="shrink-0">
-              <SmartAlertsStrip alerts={alerts} />
-            </div>
-          )}
-        </div>
+        {/* Smart Alerts */}
+        {alerts.length > 0 && <SmartAlertsStrip alerts={alerts} />}
 
-        {/* Budget Breakdown + Phase Progress + Recent Activity (3-col on xl) */}
-        <div className="grid gap-3 md:gap-4 lg:grid-cols-2 xl:grid-cols-3">
+        {/* Primary Grid: Budget + Phase + Activity (3-col on xl) */}
+        <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
           <BudgetBreakdown
             spent={totalSpent}
             remaining={budgetRemaining}
@@ -347,8 +356,8 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Room Spending + Cash Flow / EMI */}
-        <div className="grid gap-3 md:gap-4 lg:grid-cols-2">
+        {/* Secondary Grid: Room + Cash Flow */}
+        <div className="grid gap-4 lg:grid-cols-2">
           <RoomSpendingCards rooms={roomProgress} />
           <CashflowEmiWidget emiSummary={emiSummary} />
         </div>

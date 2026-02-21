@@ -44,7 +44,7 @@ export function CashflowEmiWidget({ emiSummary }: CashflowEmiWidgetProps) {
 
   if (isEmpty) {
     return (
-      <div className="rounded-xl border border-border/50 bg-card/80 p-4 backdrop-blur-sm">
+      <div className="rounded-2xl border border-border/40 bg-card p-4">
         <h3 className="mb-3 text-sm font-medium tracking-wide text-muted-foreground">
           Cash Flow / EMI
         </h3>
